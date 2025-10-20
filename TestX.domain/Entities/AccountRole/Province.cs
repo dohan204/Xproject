@@ -20,7 +20,6 @@ namespace TestX.domain.Entities.AccountRole
             this.Id = Id;
             this.Name = name;
             this.Code = code;
-            WardsCommune = new List<WardsCommune>();
             ApplicationUser = new List<ApplicationUser>();
         }
     }

@@ -94,22 +94,20 @@ namespace TestX.api.Controllers
                 throw new Exception("delete account failed.");
             }
         }
-        [HttpPost("ChangePassword")]
+        [HttpPatch("ChangePassword")]
         public async Task<IActionResult> ChangePasswordAsync(string userId, [FromBody] ChangePasswordDto changePasswordDto)
         {
             try
             {
                 var result = await _accountService.ChangePasswordAsync(userId, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
                 if (!result.Succeeded)
-                {
-                    return BadRequest(result.Errors);
-                }
+                    _logger.LogWarning("đổi mật khẩu thất bại cho {userId}: {error}",userId, string.Join(",", result.Errors.Select(er => er)));
                 return Ok("Password changed successfully.");
             }
             catch (Exception ex)
             {
-                _logger.LogError("có lỗi sảy ra khi đổi mật khẩu {error}", ex.InnerException);
-                throw new Exception("change password failed.");
+                _logger.LogError(ex, "Có lỗi xảy ra khi đổi mật khẩu cho user {UserId}", userId);
+                return StatusCode(500, "Đã xảy ra lỗi trong quá trình đổi mật khẩu.");
             }
         }
     }

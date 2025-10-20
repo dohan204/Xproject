@@ -8,7 +8,8 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data.Entity;
+//using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Security.Claims;
@@ -47,8 +48,8 @@ namespace TestX.infrastructure.Services
         public async Task<List<AccountDto>> GetAllAccountUserAsync()
         {
             var userAccount = await _context.Users.Include(e => e.Province).ToListAsync();
-            var userDto = _mapper.Map<List<AccountDto>>(userAccount);
-            return userDto;
+            var accountDto = _mapper.Map<List<AccountDto>>(userAccount);
+            return accountDto;
         }
         public async Task<AccountDto?> GetByIdAsync(string id)
         {
@@ -67,11 +68,11 @@ namespace TestX.infrastructure.Services
         public async Task<int> CreateAsync(CreateAccountDto accountDto)
         {
 
-            if (await ExistsEmailAsync(accountDto.Email))
-            {
-                _logger.LogError("Email này đã tồn tại.");
-                return 0;
-            }
+            //if (await ExistsEmailAsync(accountDto.Email))
+            //{
+            //    _logger.LogError("Email này đã tồn tại.");
+            //    return 0;
+            //}
             var province = await _context.Provinces.FindAsync(accountDto.ProvinceId);
             if (province == null)
                 _logger.LogError("Không tìm thấy tỉnh/thành phố với Id {provinceId}", accountDto.ProvinceId);
@@ -82,6 +83,7 @@ namespace TestX.infrastructure.Services
             //Province? province = null;
             var user = new ApplicationUser
             {
+                Id = Guid.NewGuid().ToString(),
                 UserName = accountDto.UserName,
                 FullName = accountDto.FullName,
                 Email = accountDto.Email,
@@ -91,7 +93,8 @@ namespace TestX.infrastructure.Services
                 WardsCommuneId = accountDto.wardsCommuneId,
                 CreatedAt = DateTime.Now
             };
-            IdentityResult result = await _userManager.CreateAsync(user, accountDto.Password);
+            var users = _mapper.Map<ApplicationUser>(user);
+            IdentityResult result = await _userManager.CreateAsync(users, accountDto.Password);
             if (!result.Succeeded)
             {
                 _logger.LogError("lỗi không tạo được tài khoản {error}", string.Join(",", result.Errors.Select(er => er)));
@@ -128,8 +131,8 @@ namespace TestX.infrastructure.Services
         }
         public async Task<bool> ExistsEmailAsync(string email)
         {
-            return await _userManager.FindByEmailAsync(email) != null;
-            
+            var emailUser = await _userManager.FindByEmailAsync(email);
+            return emailUser != null;
         }
         public async Task<UserDto> LoginAsync(LoginDto login)
         {

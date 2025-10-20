@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestX.domain.Entities.AccountRole;
+using TestX.domain.Entities.General;
 
 
 namespace TestX.infrastructure.Identity
@@ -21,6 +22,8 @@ namespace TestX.infrastructure.Identity
         public DbSet<Function> Functions { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<AccountPermission> AccountPermissions { get; set; }
+        public DbSet<School> School { get; set; }
+        public DbSet<SchoolLevel> SchoolLevel { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -74,6 +77,15 @@ namespace TestX.infrastructure.Identity
                 .WithMany(e => e.RolePermissions)
                 .HasForeignKey(rp => rp.FunctionId)
                 .HasConstraintName("FK_RolePermissions_Function")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<SchoolLevel>()
+                .HasKey(sl => sl.Id);
+            builder.Entity<SchoolLevel>()
+                .HasMany(ac => ac.Schools)
+                .WithOne(s => s.SchoolLevel)
+                .HasForeignKey(s => s.SchoolLevelId)
+                .HasConstraintName("FK_Schools_SchoolLevel")
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

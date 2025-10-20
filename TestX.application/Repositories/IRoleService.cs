@@ -4,15 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestX.application.Dtos.Role;
+using TestX.domain.Entities.AccountRole;
 
 namespace TestX.application.Repositories
 {
     public interface IRoleService
     {
-        Task<List<IdentityResult>> GetAllRole();
-        Task<IdentityResult> GetRoleById(string id);
-        Task<IdentityResult> CreateRole(string roleName);
-        Task<IdentityResult> UpdateRole();
+        Task<List<ApplicationRole>> GetAllRole();
+        Task<ApplicationRole?> GetRoleById(string id);
+        Task<IdentityResult> CreateRole(CreateRoleDto dto);
+        Task<IdentityResult> UpdateRole(string roleId, UpdateRoleDto roleDto);
         Task<IdentityResult> DeleteRole(string roleName);
         Task<IdentityResult> AssignRoleToUser(string userId, string roleName);
         Task<IdentityResult> UpdateRoleToUser();

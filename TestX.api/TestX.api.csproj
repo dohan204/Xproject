@@ -19,4 +19,8 @@
     <ProjectReference Include="..\TestX.infrastructure\TestX.infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Helpers\" />
+  </ItemGroup>
+
 </Project>

@@ -14,7 +14,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IProvinceService, ProvinceService>();
-builder.Services.AddAutoMapper(typeof(AccountMapping).Assembly);
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<ISchoolService, SchoolService>();
+builder.Services.AddAutoMapper(typeof(AccountMapping).Assembly,
+    typeof(RoleMapping).Assembly, typeof(ProvinceMapping).Assembly, typeof(School).Assembly);
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

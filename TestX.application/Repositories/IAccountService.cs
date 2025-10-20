@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TestX.application.Dtos.AccountAddress;
 using TestX.domain.Entities;
+using TestX.domain.Entities.AccountRole;
 
 namespace TestX.application.Repositories
 {

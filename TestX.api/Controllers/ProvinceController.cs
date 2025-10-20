@@ -28,5 +28,21 @@ namespace TestX.api.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet("get-ProvinceById/{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var province = await _provinceService.GetProvinceByIdAsync(id);
+                if (province == null)
+                    return NotFound();
+                return Ok(province);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("có lỗi sảy ra khi lấy dữ liệu theo id {error}", ex.InnerException);
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

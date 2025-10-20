@@ -12,6 +12,9 @@ namespace TestX.domain.Entities.AccountRole
         public string Name { get; set; }
         public int ProvinceId { get; set; }
         public Province Province { get; set; }
+        public WardsCommune()
+        {
+        }
         public WardsCommune(int id, string name)
         {
             this.Id = id;
