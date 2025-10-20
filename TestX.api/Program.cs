@@ -1,4 +1,6 @@
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Reflection;
 using TestX.application.Mapping;
 using TestX.application.Repositories;
 using TestX.infrastructure;
@@ -35,6 +37,8 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:secretKey"] ?? string.Empty))
     };
 });
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssemblies(Assembly.Load("TestX.application")));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

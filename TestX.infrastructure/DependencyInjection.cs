@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TestX.application.InterfacesContext;
 using TestX.domain.Entities.AccountRole;
 using TestX.infrastructure.Identity;
 namespace TestX.infrastructure
@@ -19,7 +20,8 @@ namespace TestX.infrastructure
             services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<IdentityContext>()
                 .AddDefaultTokenProviders();
-
+            services.AddScoped<IApplicationDbContext>(required =>
+            required.GetRequiredService<IdentityContext>());
         }
     }
 }

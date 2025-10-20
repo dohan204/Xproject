@@ -2,9 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TestX.application.InterfacesContext;
 using TestX.domain.Entities.AccountRole;
 using TestX.domain.Entities.General;
 
@@ -16,6 +18,10 @@ namespace TestX.infrastructure.Identity
         public IdentityContext(DbContextOptions<IdentityContext> options) : base(options)
         {
         }   
+        public async Task<int> SaveChangesAsync(CancellationToken token)
+        {
+            return await base.SaveChangesAsync(token);
+        }
         public DbSet<Province> Provinces { get; set; }
         public DbSet<WardsCommune> WardsCommunes { get; set; }
         public DbSet<Module> Modules { get; set; }
@@ -24,6 +30,14 @@ namespace TestX.infrastructure.Identity
         public DbSet<AccountPermission> AccountPermissions { get; set; }
         public DbSet<School> School { get; set; }
         public DbSet<SchoolLevel> SchoolLevel { get; set; }
+        public DbSet<Exam> Exams { get; set; }
+        public DbSet<StudentExam> StudentExams { get; set; }
+        public DbSet<ExamDetails> ExamDetails { get; set; } 
+        public DbSet<History> Histories { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<QuestionType> QuestionTypes { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<StudentExamDetails> StudentExamDetails { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -86,6 +100,56 @@ namespace TestX.infrastructure.Identity
                 .WithOne(s => s.SchoolLevel)
                 .HasForeignKey(s => s.SchoolLevelId)
                 .HasConstraintName("FK_Schools_SchoolLevel")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<StudentExam>()
+                .HasMany(se => se.ExamStudent)
+                .WithOne()
+                .HasForeignKey(se => se.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Exam>()
+                .HasMany(e => e.StudentExams)
+                .WithOne()
+                .HasForeignKey(se => se.ExamId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Exam>()
+                .HasMany(e => e.ExamDetails)
+                .WithOne()
+                .HasForeignKey(e => e.ExamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<ExamDetails>()
+                .HasOne(e => e.Question)
+                .WithMany(e => e.ExamDetails)
+                .HasConstraintName("FK_ExamDetails_Question")
+                .HasForeignKey(e => e.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Subject>()
+                .HasMany(s => s.Questions)
+                .WithOne(q => q.Subject)
+                .HasForeignKey(q => q.SubjectId)
+                .HasConstraintName("FK_Questions_Subject")
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Subject>()
+                .HasMany(e => e.Exams)
+                .WithOne()
+                .HasForeignKey(e => e.SubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<QuestionType>()
+                .HasMany(e => e.Questions)
+                .WithOne()
+                .HasForeignKey(e => e.QuestionTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<Level>()
+                .HasMany(e => e.Questions)
+                .WithOne()
+                .HasForeignKey(e => e.LevelId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<History>()
+                .HasMany(e => e.StudentExamDetails)
+                .WithOne()
+                .HasForeignKey(e => e.HistoryId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
