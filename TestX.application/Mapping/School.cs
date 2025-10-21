@@ -9,9 +9,9 @@ using TestX.domain.Entities.General;
 
 namespace TestX.application.Mapping
 {
-    public class School : Profile
+    public class Schools : Profile
     {
-        public School()
+        public Schools()
         {
             CreateMap<SchoolLevel, SchoolLevelDto>()
                 .ForMember(s => s.Schools, opt => opt.MapFrom(src => src.Schools != null
@@ -25,6 +25,13 @@ namespace TestX.application.Mapping
                     Email = s.Email,
                     SchoolCode = s.SchoolCode
                 }).ToList() : new List<SchoolDto>()));
+            CreateMap<School, SchoolDto>()
+                .ForMember(dest => dest.NameLevel, opt => opt.MapFrom(src => src.SchoolLevel.LevelName));
+            CreateMap<CreateSchoolDto, School>()
+                .ForMember(dest => dest.SchoolCode, opt => opt.MapFrom(src => src.Code));
+            CreateMap<UpdateSchoolDto, School>()
+                .ForMember(dest => dest.SchoolCode, opt => opt.MapFrom(src => src.Code))
+                .ForMember(dest => dest.ModifiedAt, opt => opt.MapFrom(src => src.ModifiedAt));
         }
     }
 }

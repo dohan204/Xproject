@@ -18,11 +18,8 @@ namespace TestX.infrastructure.Identity
         public IdentityContext(DbContextOptions<IdentityContext> options) : base(options)
         {
         }   
-        public async Task<int> SaveChangesAsync(CancellationToken token)
-        {
-            return await base.SaveChangesAsync(token);
-        }
         public DbSet<Province> Provinces { get; set; }
+        //public DbSet<AccountPermission> AccountPermissions { get; set; }
         public DbSet<WardsCommune> WardsCommunes { get; set; }
         public DbSet<Module> Modules { get; set; }
         public DbSet<Function> Functions { get; set; }
@@ -38,6 +35,8 @@ namespace TestX.infrastructure.Identity
         public DbSet<QuestionType> QuestionTypes { get; set; }
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<StudentExamDetails> StudentExamDetails { get; set; }
+        public DbSet<Level> Levels { get; set; }
+        public DbSet<ChoiceExam> Choices { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -105,7 +104,7 @@ namespace TestX.infrastructure.Identity
             builder.Entity<StudentExam>()
                 .HasMany(se => se.ExamStudent)
                 .WithOne()
-                .HasForeignKey(se => se.AccountId)
+                .HasForeignKey(se => se.StudentExamId)
                 .OnDelete(DeleteBehavior.Restrict);
             builder.Entity<Exam>()
                 .HasMany(e => e.StudentExams)
@@ -151,6 +150,19 @@ namespace TestX.infrastructure.Identity
                 .WithOne()
                 .HasForeignKey(e => e.HistoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<ChoiceExam>()
+                .HasKey(key =>  new { key.AccountId, key.HistoryId, key.ExamId });
+            builder.Entity<ChoiceExam>()
+                .HasOne(e => e.History)
+                .WithMany()
+                .HasForeignKey(e => e.HistoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            builder.Entity<ChoiceExam>()
+                .HasOne(e => e.Exam)
+                .WithMany()
+                .HasForeignKey(e => e.ExamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

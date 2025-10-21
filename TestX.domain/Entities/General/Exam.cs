@@ -12,6 +12,7 @@ namespace TestX.domain.Entities.General
         public string Title { get; set; }
         public int NumberOfQuestion { get; set; }
         public int SubjectId { get; set; }
+        public Subject Subject { get; set; }
         public int PassingMark { get; set; }
         public int TestingTime { get; set; }
         public DateTime? CreatedAt { get; set; }

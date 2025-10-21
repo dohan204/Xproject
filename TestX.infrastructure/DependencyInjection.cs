@@ -20,8 +20,8 @@ namespace TestX.infrastructure
             services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<IdentityContext>()
                 .AddDefaultTokenProviders();
-            services.AddScoped<IApplicationDbContext>(required =>
-            required.GetRequiredService<IdentityContext>());
+            //services.AddScoped<IApplicationDbContext>(required =>
+            //required.GetRequiredService<IdentityContext>());
         }
     }
 }

@@ -10,6 +10,10 @@ using System.Threading.Tasks;
 using TestX.application.Dtos.School;
 using TestX.application.Repositories;
 using TestX.infrastructure.Identity;
+using Microsoft.AspNetCore.Mvc.Filters;
+using AutoMapper.QueryableExtensions;
+using TestX.application.Mapping;
+using TestX.domain.Entities.General;
 
 namespace TestX.infrastructure.Services
 {
@@ -38,6 +42,14 @@ namespace TestX.infrastructure.Services
             //}).ToList();
             var schoolDto = _mapper.Map<List<SchoolLevelDto>>(schools);
             return schoolDto;
+        }
+        public async Task<SchoolDto> GetSchoolById(int id)
+        {
+            var school = await _context.School.Include(e => e.SchoolLevel).FirstOrDefaultAsync(sc => sc.Id == id);
+            var dtos = _mapper.Map<SchoolDto>(school);
+            //var school = await _context.School.ProjectTo<SchoolDto>(_mapper.ConfigurationProvider)
+            //    .FirstOrDefaultAsync(sc => sc.SchoolLevelId == id);
+            return dtos;
         }
         public async Task<SchoolDto> FilterSchool(string schoolCode, string schoolName, string schoolId)
         {
@@ -68,6 +80,45 @@ namespace TestX.infrastructure.Services
                 return null;
             var schoolLevelDto = _mapper.Map<SchoolLevelDto>(schoolLevel);
             return schoolLevelDto;
+        }
+        public async Task AddAsync(CreateSchoolDto schoolDto)
+        {
+            if(schoolDto == null)
+                throw new ArgumentNullException(nameof(schoolDto));
+
+            var school = _mapper.Map<School>(schoolDto);
+            school.CreatedAt = DateTime.Now;
+            await _context.School.AddAsync(school);
+            await _context.SaveChangesAsync();
+        }
+        public async Task UpdateAsync(UpdateSchoolDto schoolDto, int id)
+        {
+            var school = await _context.School.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
+            if (school == null)
+                throw new ArgumentNullException($"trường với id: {id} khong tìm thấy");
+
+            //if(school.Id == school.Id)
+            //{
+            //    school.Name = schoolDto.Name;
+            //    school.Address = schoolDto.Address;
+            //    school.SchoolLevelId = schoolDto.SchoolLevelId;
+            //    school.ModifiedAt = DateTime.Now;
+            //    school.SchoolCode = schoolDto.Code;
+            //    school.PhoneNumber = schoolDto.PhoneNumber;
+            //    school.Email = schoolDto.Email;
+            //}
+            schoolDto.ModifiedAt = DateTime.Now;
+            var updateSchool = _mapper.Map<UpdateSchoolDto, School>(schoolDto, school);
+            _context.School.Update(updateSchool);
+            await _context.SaveChangesAsync();
+        }
+        public async Task DeleteAsync(int id)
+        {
+            var school = await _context.School.AsNoTracking().FirstOrDefaultAsync(sc => sc.Id == id);
+            if (school == null)
+                throw new ArgumentNullException("không tìm thấy trường");
+            _context.School.Remove(school);
+            await _context.SaveChangesAsync();
         }
     }
 }

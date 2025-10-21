@@ -10,6 +10,7 @@ namespace TestX.domain.Entities.General
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public string Code { get; set; }
         public ICollection<Question> Questions { get; set; }
         public ICollection<Exam> Exams { get; set; }
     }

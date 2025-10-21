@@ -12,5 +12,6 @@ namespace TestX.domain.Entities.General
         public string Name { get; set; }
         public DateTime Time { get; set; }
         public ICollection<StudentExamDetails> StudentExamDetails { get; set; }
+        public ICollection<ChoiceExam> ChoiceExams { get; set; }    
     }
 }

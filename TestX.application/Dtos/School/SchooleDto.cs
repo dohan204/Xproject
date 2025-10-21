@@ -15,5 +15,6 @@ namespace TestX.application.Dtos.School
         public string SchoolCode { get; set; }
         public int SchoolLevelId { get; set; }
         public SchoolLevelDto SchoolLevel { get; set; }
+        public string NameLevel { get; set; }
     }
 }

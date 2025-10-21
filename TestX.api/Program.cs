@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Reflection;
 using TestX.application.Mapping;
 using TestX.application.Repositories;
+using TestX.domain.Entities.General;
 using TestX.infrastructure;
 using TestX.infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
