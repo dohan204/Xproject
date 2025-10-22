@@ -4,15 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestX.application.Dtos.AccountAddress;
+using TestX.domain.Entities.AccountRole;
 
-namespace TestX.domain.Entities.AccountRole
+namespace TestX.application.Dtos.Role
 {
     public class UpdateRoleDto
     {
-        public string RoleName { get; set; }
+        //public int Id { get; set; }
+        public string Name { get; set; }
         public string Description { get; set; }
+        public DateTime ModifiedAt { get; set; }
         public bool Active { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public ICollection<RolePermissionDto> RolePermissions { get; set; } 
+        public ICollection<RolePermissionDto> RolePermissionDtos { get; set; }
     }
 }

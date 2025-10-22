@@ -22,5 +22,6 @@ namespace TestX.application.Dtos.School
         public string Code { get; set; }
         [Phone]
         public string PhoneNumber { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 }

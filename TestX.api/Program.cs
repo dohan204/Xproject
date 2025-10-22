@@ -19,6 +19,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IProvinceService, ProvinceService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ISchoolService, SchoolService>();
+builder.Services.AddScoped<ISubjectRepository, SubjectService>();
 builder.Services.AddAutoMapper(typeof(AccountMapping).Assembly,
     typeof(RoleMapping).Assembly, typeof(ProvinceMapping).Assembly, typeof(School).Assembly);
 builder.Services.AddAuthentication(options =>
@@ -50,9 +51,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

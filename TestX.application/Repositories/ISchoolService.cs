@@ -11,8 +11,8 @@ namespace TestX.application.Repositories
     {
         Task<List<SchoolLevelDto>> GetSchoolLevelAsync();
         Task<SchoolLevelDto> GetSchoolLevelAsync(string schoolLevelId);
-        Task AddAsync(CreateSchoolDto schoolDto);
-        Task UpdateAsync(UpdateSchoolDto schoolDto, int id);
-        Task DeleteAsync(int SchoolId);
+        Task<int> AddAsync(CreateSchoolDto schoolDto);
+        Task<int> UpdateAsync(UpdateSchoolDto schoolDto, int id);
+        Task<int> DeleteAsync(int SchoolId);
     }
 }

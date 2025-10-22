@@ -81,17 +81,18 @@ namespace TestX.infrastructure.Services
             var schoolLevelDto = _mapper.Map<SchoolLevelDto>(schoolLevel);
             return schoolLevelDto;
         }
-        public async Task AddAsync(CreateSchoolDto schoolDto)
+        public async Task<int> AddAsync(CreateSchoolDto schoolDto)
         {
             if(schoolDto == null)
                 throw new ArgumentNullException(nameof(schoolDto));
-
+            schoolDto.CreatedAt = DateTime.Now;
             var school = _mapper.Map<School>(schoolDto);
-            school.CreatedAt = DateTime.Now;
+            
             await _context.School.AddAsync(school);
             await _context.SaveChangesAsync();
+            return school.Id;
         }
-        public async Task UpdateAsync(UpdateSchoolDto schoolDto, int id)
+        public async Task<int> UpdateAsync(UpdateSchoolDto schoolDto, int id)
         {
             var school = await _context.School.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
             if (school == null)
@@ -111,14 +112,16 @@ namespace TestX.infrastructure.Services
             var updateSchool = _mapper.Map<UpdateSchoolDto, School>(schoolDto, school);
             _context.School.Update(updateSchool);
             await _context.SaveChangesAsync();
+            return school.Id;
         }
-        public async Task DeleteAsync(int id)
+        public async Task<int> DeleteAsync(int id)
         {
             var school = await _context.School.AsNoTracking().FirstOrDefaultAsync(sc => sc.Id == id);
             if (school == null)
                 throw new ArgumentNullException("không tìm thấy trường");
             _context.School.Remove(school);
             await _context.SaveChangesAsync();
+            return school.Id;
         }
     }
 }

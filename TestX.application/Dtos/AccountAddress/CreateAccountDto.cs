@@ -15,6 +15,8 @@ namespace TestX.application.Dtos.AccountAddress
         [Required]
         public string FullName { get; set; } = null!;
         [Required]
+        [DataType(DataType.Password)]
+        [MinLength(6, ErrorMessage = "Mật khẩu không được nhỏ hơn 6 ký tự")]
         public string Password { get; set; } = null!;
         [Required]
         [EmailAddress]

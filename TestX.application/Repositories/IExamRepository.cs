@@ -13,5 +13,9 @@ namespace TestX.application.Repositories
         Task<List<ExamViewDetailsDto>> GetAllExamDetails();
         Task<ExamViewDto> GetExamByName(string Name);
         //Task CreateExamQuestion();
+        //Task<>
+        Task<int> CreateAsync(ExamCreateDto examCreateDto);
+        Task<int> UpdateAsync(ExamUpdateDto examUpdateDto);
+
     }
 }

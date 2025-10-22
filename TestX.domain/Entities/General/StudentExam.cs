@@ -23,6 +23,6 @@ namespace TestX.domain.Entities.General
         public DateTime? UpdatedAt { get; set; }
         public string CreateBy { get; set; }
         public string ? UpdateBy { get; set; }
-        public ICollection<StudentExamDetails> ExamStudent { get; set; }
+        public ICollection<StudentExamDetails> StudentExamDetails { get; set; }
     }
 }

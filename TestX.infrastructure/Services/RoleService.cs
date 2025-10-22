@@ -89,18 +89,28 @@ namespace TestX.infrastructure.Services
             if(role == null)
                 return IdentityResult.Failed(new IdentityError { Description = "Role không tồn tại." });
 
-            var nameRoleExists = await _roleManager.RoleExistsAsync(roleDto.RoleName);
-            if(nameRoleExists && role.Name != roleDto.RoleName)
+            var nameRoleExists = await _roleManager.RoleExistsAsync(roleDto.Name);
+            if(nameRoleExists && role.Name != roleDto.Name)
                 return IdentityResult.Failed(new IdentityError { Description = "Role đã tồn tại." });
-            role.Name = roleDto.RoleName;
+            role.Name = roleDto.Name;
             role.Description = roleDto.Description;
             role.Active = roleDto.Active;
             role.UpdatedAt = DateTime.UtcNow;
-            foreach(var permission in roleDto.RolePermissions)
+            foreach(var permission in roleDto.RolePermissionDtos)
             {
                 var rolePermission = await _context.RolePermissions
                     .FirstOrDefaultAsync(rp => rp.RoleId == role.Id && rp.FunctionId == permission.FunctionId);
-                if(rolePermission != null)
+                //if (rolePermission == null)
+                //{
+                //    rolePermission = new RolePermission
+                //    {
+                //        RoleId = role.Id,
+                //        FunctionId = permission.FunctionId,
+                //        // gán quyền từ DTO
+                //    };
+                //    _context.RolePermissions.Add(rolePermission);
+                //}
+                if (rolePermission != null)
                 {
                     rolePermission.CanCreate = permission.CanCreate;
                     rolePermission.CanRead = permission.CanRead;
@@ -131,7 +141,9 @@ namespace TestX.infrastructure.Services
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
                 return IdentityResult.Failed(new IdentityError { Description = "người dung không tồn tại." });
-
+            var role = await _roleManager.RoleExistsAsync(roleName);
+            if (!role)
+                return IdentityResult.Failed(new IdentityError { Description = "vai trò kh tồn tại, kh thể gán" });
             IdentityResult result = await _userManager.AddToRoleAsync(user, roleName);
             return result;
         }

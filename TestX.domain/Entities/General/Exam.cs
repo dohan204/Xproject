@@ -15,10 +15,11 @@ namespace TestX.domain.Entities.General
         public Subject Subject { get; set; }
         public int PassingMark { get; set; }
         public int TestingTime { get; set; }
+        public DateTime ExamDate { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? ModifiedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public string ModifiedBy { get; set; }
+        public string? CreatedBy { get; set; }
+        public string? ModifiedBy { get; set; }
         public ICollection<StudentExam> StudentExams { get; set; }
         public ICollection<ExamDetails> ExamDetails { get; set; }
     }

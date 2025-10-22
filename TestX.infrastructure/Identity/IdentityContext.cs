@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading.Tasks;
 using TestX.application.InterfacesContext;
@@ -102,18 +103,20 @@ namespace TestX.infrastructure.Identity
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<StudentExam>()
-                .HasMany(se => se.ExamStudent)
-                .WithOne()
+                .HasMany(se => se.StudentExamDetails)
+                .WithOne(sed => sed.StudentExam)
                 .HasForeignKey(se => se.StudentExamId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<Exam>()
                 .HasMany(e => e.StudentExams)
-                .WithOne()
+                .WithOne(se => se.Exam)
                 .HasForeignKey(se => se.ExamId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<Exam>()
                 .HasMany(e => e.ExamDetails)
-                .WithOne()
+                .WithOne(e => e.Exam)
                 .HasForeignKey(e => e.ExamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -130,33 +133,45 @@ namespace TestX.infrastructure.Identity
                 .HasForeignKey(q => q.SubjectId)
                 .HasConstraintName("FK_Questions_Subject")
                 .OnDelete(DeleteBehavior.Restrict);
+
+
             builder.Entity<Subject>()
                 .HasMany(e => e.Exams)
-                .WithOne()
+                .WithOne(s => s.Subject)
                 .HasForeignKey(e => e.SubjectId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
             builder.Entity<QuestionType>()
                 .HasMany(e => e.Questions)
-                .WithOne()
+                .WithOne(q => q.QuestionType)
                 .HasForeignKey(e => e.QuestionTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<Level>()
                 .HasMany(e => e.Questions)
-                .WithOne()
+                .WithOne(l => l.Level)
                 .HasForeignKey(e => e.LevelId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
             builder.Entity<History>()
                 .HasMany(e => e.StudentExamDetails)
-                .WithOne()
+                .WithOne(htr => htr.History)
                 .HasForeignKey(e => e.HistoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
             builder.Entity<ChoiceExam>()
                 .HasKey(key =>  new { key.AccountId, key.HistoryId, key.ExamId });
+
+
             builder.Entity<ChoiceExam>()
                 .HasOne(e => e.History)
-                .WithMany()
+                .WithMany(c => c.ChoiceExams)
                 .HasForeignKey(e => e.HistoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
             builder.Entity<ChoiceExam>()
                 .HasOne(e => e.Exam)
                 .WithMany()

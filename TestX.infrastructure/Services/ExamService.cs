@@ -3,12 +3,13 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+//using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestX.application.Dtos.ExamTestDto;
 using TestX.application.Repositories;
+using TestX.domain.Entities.General;
 using TestX.infrastructure.Identity;
 
 namespace TestX.infrastructure.Services
@@ -38,6 +39,22 @@ namespace TestX.infrastructure.Services
             var dtos = _mapper.Map<ExamViewDto>(exam);
             return dtos;
         }
-        //public async Task<>
+        public async Task<int> CreateAsync(ExamCreateDto examCreateDto)
+        {
+            var exam = _mapper.Map<Exam>(examCreateDto);
+            exam.CreatedAt = DateTime.Now;
+            await _identityContext.Exams.AddAsync(exam);
+            await _identityContext.SaveChangesAsync();
+            return exam.Id;
+        }
+        public async Task<int> UpdateAsync(ExamUpdateDto examUpdateDto)
+        {
+            var existingExam = await _identityContext.Exams.FindAsync(examUpdateDto.Id);
+            if (existingExam == null) return 0;
+            _mapper.Map(examUpdateDto, existingExam);
+            existingExam.ModifiedAt = DateTime.Now;
+            await _identityContext.SaveChangesAsync();
+            return existingExam.Id;
+        }
     }
 }

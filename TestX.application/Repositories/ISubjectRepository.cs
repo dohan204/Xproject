@@ -11,8 +11,8 @@ namespace TestX.application.Repositories
     {
         Task<List<Subject>> GetAllSubjects();
         Task<Subject> GetSubjectById(int id);
-        Task AddAsync(Subject subject);
-        Task UpdateAsync(Subject subject, int id);
-        Task DeleteAsync(int id);
+        Task<int> AddAsync(Subject subject);
+        Task<int> UpdateAsync(Subject subject, int id);
+        Task<int> DeleteAsync(int id);
     }
 }
