@@ -45,6 +45,6 @@ namespace TestX.api.Controllers
                 throw;
             }
         }
-        [HttpPost]
+        //[HttpPost]
     }
 }

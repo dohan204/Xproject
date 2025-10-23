@@ -1,6 +1,9 @@
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Reflection;
+using TestX.api.Middleware;
+
+//using TestX.api.CustomMiddleware;
 using TestX.application.Mapping;
 using TestX.application.Repositories;
 using TestX.domain.Entities.General;
@@ -49,7 +52,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseMiddleware<ExceptionMiddleware>();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();
