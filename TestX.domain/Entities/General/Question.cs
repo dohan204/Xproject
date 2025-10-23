@@ -21,12 +21,12 @@ namespace TestX.domain.Entities.General
         public string OptionB { get; set; }
         public string OptionC { get; set; }
         public string OptionD { get; set; }
-        public string OptionE { get; set; }
-        public string OptionF { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public DateTime ModifiedAt { get; set; }
-        public string ModifiedBy { get; set; }
+        public string? OptionE { get; set; }
+        public string? OptionF { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string? CreatedBy { get; set; }
+        public DateTime? ModifiedAt { get; set; }
+        public string? ModifiedBy { get; set; }
         public ICollection<ExamDetails> ExamDetails { get; set; }
     }
 }
