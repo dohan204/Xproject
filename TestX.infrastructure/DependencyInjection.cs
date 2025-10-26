@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 using TestX.application.InterfacesContext;
 using TestX.domain.Entities.AccountRole;
 using TestX.infrastructure.Identity;
@@ -22,6 +23,20 @@ namespace TestX.infrastructure
                 .AddDefaultTokenProviders();
             //services.AddScoped<IApplicationDbContext>(required =>
             //required.GetRequiredService<IdentityContext>());
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = configuration["RedisCacheOptions:Configuration"];
+                options.InstanceName = configuration["RedisCacheOptions:InstanceName"];
+            });
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var redisConfig = configuration["RedisCacheOptions:Configuration"];
+                if(string.IsNullOrEmpty(redisConfig))
+                {
+                    throw new ArgumentNullException("Redis configuration is missing in appsetting.json");
+                }
+                return ConnectionMultiplexer.Connect(redisConfig);
+            });
         }
     }
 }

@@ -10,12 +10,16 @@ namespace TestX.api.Controllers
     [Route("api/[controller]")]
     public class AccountController : ControllerBase
     {
+
         private readonly IAccountService _accountService;
         private readonly ILogger<AccountController> _logger;
+        //private readonly TimeSpan _time;
+        
         public AccountController(IAccountService accountService, ILogger<AccountController> logger)
         {
             _accountService = accountService;
             _logger = logger;
+            //_time = 
         }
         [HttpGet]
         public async Task<IActionResult> GetAsync()

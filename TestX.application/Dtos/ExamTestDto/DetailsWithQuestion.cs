@@ -6,13 +6,14 @@ using System.Threading.Tasks;
 
 namespace TestX.application.Dtos.ExamTestDto
 {
-    public class ExamViewDetailsDto
+    public class ExamWithQuestion
     {
         public int Id { get; set; }
-        public string Title { get; set; }
-        public int NumberOfQuestion { get; set; }
+        public string Name { get; set; }
         public string SubjectName { get; set; }
-        public int TestingTime { get; set; }
-        public DateTime ExamDay { get; set; } = DateTime.Now;
+        public int NumberOfQuestions { get; set; }
+        public int TimeTest { get; set; }
+        public List<QuestionWithExamDto> Question { get; set; }
+
     }
 }

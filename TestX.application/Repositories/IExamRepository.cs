@@ -16,6 +16,7 @@ namespace TestX.application.Repositories
         //Task<>
         Task<int> CreateAsync(ExamCreateDto examCreateDto);
         Task<int> UpdateAsync(ExamUpdateDto examUpdateDto);
-
+        Task<int> CreateExamWithQuestion(ExamCreateDto examCreateDto);
+        Task<ExamWithQuestion?> GetDetailsWithQuestion(int id);
     }
 }

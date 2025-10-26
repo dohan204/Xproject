@@ -23,6 +23,7 @@ namespace TestX.application.Mapping.Exams
                 .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject.Name));
 
             CreateMap<ExamCreateDto, Exam>()
+                .ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.ModifiedAt, opt => opt.MapFrom(src => src.CreatedAt))
                 .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.SubjectId))
                 .ForMember(dest => dest.TestingTime, opt => opt.MapFrom(src => src.Time));
