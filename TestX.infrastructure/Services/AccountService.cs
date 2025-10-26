@@ -19,6 +19,9 @@ using TestX.application.Dtos.AccountAddress;
 using TestX.application.Repositories;
 using TestX.domain.Entities.AccountRole;
 using TestX.infrastructure.Identity;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace TestX.infrastructure.Services
 {
@@ -31,9 +34,11 @@ namespace TestX.infrastructure.Services
         private readonly ILogger<AccountService> _logger;
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
         private readonly ITokenService _tokenService;
+        private readonly ICacheService _cache;
+        private readonly TimeSpan _time;
         public AccountService(IdentityContext context, UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager, IMapper mapper, ILogger<AccountService> logger, 
-            IPasswordHasher<ApplicationUser> passwordHasher, ITokenService tokenService)
+            IPasswordHasher<ApplicationUser> passwordHasher, ITokenService tokenService, ICacheService cache, IConfiguration configuration)
         {
             _context = context;
             _userManager = userManager;
@@ -42,28 +47,57 @@ namespace TestX.infrastructure.Services
             _logger = logger;
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
-
+            _cache = cache;
+            _time = TimeSpan.FromMinutes(configuration.GetValue<int>("CacheSettings:Expiry", 40));
         }
 
         public async Task<List<AccountDto>> GetAllAccountUserAsync()
         {
-            var userAccount = await _context.Users.Include(e => e.Province).ToListAsync();
-            var accountDto = _mapper.Map<List<AccountDto>>(userAccount);
-            return accountDto;
+            var key = "List_Account";
+            var cached = await _cache.GetAsync<List<AccountDto>>(key);
+
+            if(cached != null && cached.Any())
+            {
+                return cached;
+            }
+            var userAccount = await _context.Users.Include(u => u.Province)
+                .AsNoTracking().Select(u => _mapper.Map<AccountDto>(cached)).ToListAsync();
+            if(userAccount != null)
+            {
+                await _cache.SetAsync(key, userAccount, _time);
+            }
+            return userAccount!;
+            //var userAccount = await _context.Users.Include(e => e.Province).ToListAsync();
+            //var accountDto = _mapper.Map<List<AccountDto>>(userAccount);
+            //return accountDto;
         }
         public async Task<AccountDto?> GetByIdAsync(string id)
         {
 
             //var account = await _context.Users.AsQueryable();
-            var userAccount = await _context.Users.Include(e => e.Province).AsNoTracking().FirstOrDefaultAsync(acc => acc.Id == id);
+            //var userAccount = await _context.Users.Include(e => e.Province).AsNoTracking().FirstOrDefaultAsync(acc => acc.Id == id);
             //var userAccount = await _context.Users
             //.Include(u => u.WardsCommune)
             //    .ThenInclude(c => c.Province)
             //.AsNoTracking()
             //.FirstOrDefaultAsync(u => u.Id == id);
 
-            var accountDto = _mapper.Map<AccountDto>(userAccount);  
-            return accountDto;
+            //var accountDto = _mapper.Map<AccountDto>(userAccount);  
+            //return accountDto;
+
+            var key = $"account_{id}";
+            var account = await _cache.GetAsync<AccountDto>(key);
+            if(account != null)
+            {
+                return account;
+            }
+            var acc = await _context.Users.AsNoTracking().Include(u => u.Province)
+                .Select(u => _mapper.Map<AccountDto>(u)).FirstOrDefaultAsync(acc => acc.Id == id);
+            if(acc != null)
+            {
+                await _cache.SetAsync(key, acc, _time);
+            }
+            return acc;
         }
         public async Task<int> CreateAsync(CreateAccountDto accountDto)
         {
@@ -100,6 +134,7 @@ namespace TestX.infrastructure.Services
                 _logger.LogError("lỗi không tạo được tài khoản {error}", string.Join(",", result.Errors.Select(er => er)));
                 return 0;
             }    
+            await _cache.RemoveAsync("List_account");
             IdentityResult roleAssign = await _userManager.AddToRoleAsync(user, "User");
             return 1;
         }
@@ -120,6 +155,7 @@ namespace TestX.infrastructure.Services
                 acc.UpdatedAt = DateTime.Now;
             
             IdentityResult result = await _userManager.UpdateAsync(acc);
+            await _cache.RemoveAsync("List_Account");
             return result.Succeeded ? 1 : 0;
         }
         public async Task<bool> DeleteAsync(string id)

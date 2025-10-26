@@ -5,9 +5,11 @@ using TestX.api.Middleware;
 
 //using TestX.api.CustomMiddleware;
 using TestX.application.Mapping;
+using TestX.application.Mapping.Exams;
 using TestX.application.Repositories;
 using TestX.domain.Entities.General;
 using TestX.infrastructure;
+using TestX.infrastructure.Cacche;
 using TestX.infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +25,12 @@ builder.Services.AddScoped<IProvinceService, ProvinceService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<ISchoolService, SchoolService>();
 builder.Services.AddScoped<ISubjectRepository, SubjectService>();
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+builder.Services.AddScoped<IExamRepository, ExamService >();
 builder.Services.AddAutoMapper(typeof(AccountMapping).Assembly,
-    typeof(RoleMapping).Assembly, typeof(ProvinceMapping).Assembly, typeof(School).Assembly);
+    typeof(RoleMapping).Assembly, typeof(ProvinceMapping).Assembly,
+    typeof(School).Assembly, typeof(QuestionExam).Assembly);
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -44,6 +50,8 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(Assembly.Load("TestX.application")));
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

@@ -12,11 +12,13 @@ using TestX.application.Repositories;
 using TestX.infrastructure.Identity;
 using TestX.domain.Entities.General;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Http;
 
 namespace TestX.infrastructure.Services
 {
     public class QuestionService : IQuestionService
     {
+        //private readonly HttpContent _content;s
         private static readonly Random _random = new Random();
         private readonly IdentityContext _context;
         private readonly IMapper _mapper;
@@ -24,6 +26,7 @@ namespace TestX.infrastructure.Services
         {
             _context = context;
             _mapper = mapper;
+            //_content = content;
         }
         public async Task<List<QuestionViewDto>> AllQuestion()
         {
@@ -41,6 +44,7 @@ namespace TestX.infrastructure.Services
         {
             var question = _mapper.Map<Question>(questionCreateDto);
             question.CreatedAt = DateTime.Now;
+            question.CreatedBy = "admin";
             await _context.Questions.AddAsync(question);
             await _context.SaveChangesAsync();
             return question.Id;
