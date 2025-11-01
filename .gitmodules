@@ -1,0 +1,3 @@
+[submodule "Ui/Xproject"]
+	path = Ui/Xproject
+	url = https://github.com/dohan204/Xproject.git

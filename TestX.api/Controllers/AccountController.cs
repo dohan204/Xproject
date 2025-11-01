@@ -52,7 +52,8 @@ namespace TestX.api.Controllers
         {
             var account = await _accountService.CreateAsync(accountDto);
             if (account == 0)
-                throw new BusinessException("Email đã tồn tại.");
+
+                throw new Exception("lỗi kh tạo được");
             return Content("Tạo người dùng thành Công.");
         }
         [HttpPut("updateAccount")]
@@ -117,6 +118,22 @@ namespace TestX.api.Controllers
 
             return Ok("Password changed successfully.");
 
+        }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDto loginDto)
+        {
+            try
+            {
+                var login = await _accountService.LoginAsync(loginDto);
+                if (login == null)
+                    return NotFound();
+                return Ok(login);
+            }
+            catch (Exception )
+            {
+                _logger.LogError("lỗi.");
+                throw;
+            }
         }
     }
 }

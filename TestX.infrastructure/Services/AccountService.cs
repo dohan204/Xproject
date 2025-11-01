@@ -56,20 +56,22 @@ namespace TestX.infrastructure.Services
             var key = "List_Account";
             var cached = await _cache.GetAsync<List<AccountDto>>(key);
 
-            if(cached != null && cached.Any())
+            if (cached != null && cached.Any())
             {
                 return cached;
             }
-            var userAccount = await _context.Users.Include(u => u.Province)
-                .AsNoTracking().Select(u => _mapper.Map<AccountDto>(cached)).ToListAsync();
-            if(userAccount != null)
-            {
+            //var userAccount = await _context.Users.AsNoTracking().ToListAsync();
+            //var accountMapper = _mapper.Map<List<AccountDto>>(userAccount);
+            //if(accountMapper != null)
+            //{
+            //    await _cache.SetAsync(key, userAccount, _time);
+            //}
+            //return accountMapper;
+            var userAccount = await _context.Users.Include(e => e.Province).ToListAsync();
+            if (userAccount != null)
                 await _cache.SetAsync(key, userAccount, _time);
-            }
-            return userAccount!;
-            //var userAccount = await _context.Users.Include(e => e.Province).ToListAsync();
-            //var accountDto = _mapper.Map<List<AccountDto>>(userAccount);
-            //return accountDto;
+            var accountDto = _mapper.Map<List<AccountDto>>(userAccount);
+            return accountDto;
         }
         public async Task<AccountDto?> GetByIdAsync(string id)
         {

@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Reflection;
 using TestX.api.Middleware;
@@ -14,6 +14,16 @@ using TestX.infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowedAll", policy =>
+    {
+        policy.AllowAnyHeader()
+        .AllowAnyOrigin();
+
+    });
+
+});
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -28,6 +38,7 @@ builder.Services.AddScoped<ISubjectRepository, SubjectService>();
 builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IExamRepository, ExamService >();
+builder.Services.AddScoped<IWardsCommuneService, WardsCommuneService>();
 builder.Services.AddAutoMapper(typeof(AccountMapping).Assembly,
     typeof(RoleMapping).Assembly, typeof(ProvinceMapping).Assembly,
     typeof(School).Assembly, typeof(QuestionExam).Assembly);
@@ -51,16 +62,16 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(Assembly.Load("TestX.application")));
 
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment())
+//{
+//}
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseCors("AllowedAll");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();
