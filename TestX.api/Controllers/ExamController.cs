@@ -13,7 +13,7 @@ namespace TestX.api.Controllers
         private readonly IExamRepository _examRepository;
         private readonly ILogger<ExamController> _logger;
         private readonly ICacheService _cacheService;
-        public ExamController(IExamRepository examRepository, ILogger<ExamController> logger, 
+        public ExamController(IExamRepository examRepository, ILogger<ExamController> logger,
             ICacheService cache)
         {
             _examRepository = examRepository;
@@ -45,14 +45,14 @@ namespace TestX.api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError("lỗi khi thực hiện truy suất: {error}", ex.InnerException);
-                    return NotFound(ex.Message);
+                return NotFound(ex.Message);
                 throw;
             }
         }
         [HttpPost]
         public async Task<IActionResult> CreateExam(ExamCreateDto dto)
         {
-            var exam =await _examRepository.CreateAsync(dto);
+            var exam = await _examRepository.CreateAsync(dto);
             if (exam == 0)
                 return BadRequest("không ther tạo bài thi.");
             return Ok(exam);
@@ -60,7 +60,7 @@ namespace TestX.api.Controllers
         [HttpPost("CreateWithquesition")]
         public async Task<IActionResult> Create(ExamCreateDto dto)
         {
-            var exams =await _examRepository.CreateExamWithQuestion(dto);
+            var exams = await _examRepository.CreateExamWithQuestion(dto);
             if (exams == 0)
                 return BadRequest();
             return Ok(exams);
@@ -71,7 +71,7 @@ namespace TestX.api.Controllers
             try
             {
                 var details = await _examRepository.GetDetailsWithQuestion(id);
-                if(details == null)
+                if (details == null)
                     return NotFound();
                 return Ok(details);
             }
@@ -81,5 +81,49 @@ namespace TestX.api.Controllers
                 return NotFound(ex.Message);
             }
         }
-    }
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var exam = _examRepository.Delete(id);
+                if (exam is null)
+                    return NotFound();
+                return Ok("Xóa thành công.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Lỗi,{error}", ex.Message);
+                return StatusCode(500);
+            }
+        }
+        [HttpGet("randomExam")]
+        public async Task<IActionResult> GetRandomExam()
+        {
+            try
+            {
+                var exam = await _examRepository.GetRandomExam();
+                return Ok(exam);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi lấy dữ liệu ngẫu nhiên: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+        [HttpGet("examBySubject")]
+        public async Task<IActionResult> GetExamBySubjectName(int name)
+        {
+            try
+            {
+                var exam = await _examRepository.GetExamBySubjectName(name);
+                return Ok(exam);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi lấy dữ liệu theo tên môn học: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+    } 
 }

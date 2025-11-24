@@ -14,7 +14,7 @@ namespace TestX.application.Mapping
                     opt => opt.MapFrom(src => src.WardsCommune != null
                         ? src.WardsCommune.Select(w => new WardsDto
                         {
-                            //Id = w.Id,
+                            Id = w.Id,
                             Name = w.Name
                         }).ToList()
                         : new List<WardsDto>()

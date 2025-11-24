@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TestX.application.Dtos.ProVinceDto
+namespace TestX.application.Dtos.Subject
 {
-    public class ProvinceDto
+    public class Update
     {
         public int Id { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }
-        public ICollection<WardsDto> WardsDto { get; set; }
     }
 }

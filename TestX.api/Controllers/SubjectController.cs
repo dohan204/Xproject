@@ -2,11 +2,14 @@
 using Microsoft.IdentityModel.Tokens;
 using System.Data.Common;
 using System.Data.Entity.Infrastructure;
+using TestX.application.Dtos.Subject;
 using TestX.application.Repositories;
 using TestX.domain.Entities.General;
 
 namespace TestX.api.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class SubjectController : Controller
     {
         private readonly ISubjectRepository _subject; 
@@ -49,7 +52,7 @@ namespace TestX.api.Controllers
             }
         }
         [HttpPost("Create")]
-        public async Task<IActionResult> Create(Subject subject)
+        public async Task<IActionResult> Create([FromBody] Add subject)
         {
             try
             {
@@ -68,7 +71,7 @@ namespace TestX.api.Controllers
             }
         }
         [HttpPut("Update_subject")]
-        public async Task<IActionResult> Update(Subject subject, int id)
+        public async Task<IActionResult> Update([FromBody] Update subject, int id)
         {
             try
             {

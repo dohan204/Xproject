@@ -8,7 +8,7 @@ namespace TestX.application.Dtos.ProVinceDto
 {
     public class WardsDto
     {
-        //public int Id { get; set; }
+        public int Id { get; set; }
         public string Name { get; set; }
     }
 }

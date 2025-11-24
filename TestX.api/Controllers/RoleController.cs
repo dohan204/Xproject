@@ -1,150 +1,135 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using System.Data.Common;
-using System.Data.Entity.Infrastructure;
+﻿using Microsoft.AspNetCore.Mvc;
 using TestX.application.Dtos.Role;
+using TestX.domain.Entities.AccountRole;
 using TestX.application.Repositories;
-
-namespace TestX.api.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class RoleController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class RoleController : ControllerBase
+    private readonly ILogger<RoleController> _logger;
+    private readonly IRoleService _roleService;
+
+    public RoleController(IRoleService roleService, ILogger<RoleController> logger)
     {
-        private readonly ILogger<RoleController> _logger;
-        private readonly IRoleService _roleService;
-        public RoleController(IRoleService roleService, ILogger<RoleController> logger)
-        {
-            _roleService = roleService;
-            _logger = logger;
-        }
-        [HttpGet("get-AllRole")]
-        public async Task<IActionResult> GetAllRoleAsync()
-        {
-            try
-            {
-                var roles = await _roleService.GetAllRole();
-                return Ok(roles);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("có lỗi sảy ra khi lấy dữ liệu {error}", ex.InnerException);
-                return BadRequest(ex.Message);
-            }
-        }
-        [HttpGet("get-RoleById/{id}")]
-        public async Task<IActionResult> GetRoleByIdAsync(string id)
-        {
-            try
-            {
-                var role = await _roleService.GetRoleById(id);
-                if (role == null)
-                    return NotFound();
-                return Ok(role);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("có lỗi sảy ra khi lấy dữ liệu theo id {error}", ex.InnerException);
-                return BadRequest(ex.Message);
-            }
-        }
-        [HttpGet("getByName")]
-        public async Task<IActionResult> ExistsRole([FromQuery] string name)
-        {
-            try
-            {
-                var role = await _roleService.CheckExistsRole(name);
-                if (role == null)
-                    return Content("Vai trò bạn cần tìm không tồn tại");
-                return Ok(role);
+        _roleService = roleService;
+        _logger = logger;
+    }
 
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Sảy ra lỗi khi thực hiện thao tac get: {error}", ex.InnerException);
-                return StatusCode(500, ex.Message);
-            }
-        }
-        [HttpPost("create-Role")]
-        public async Task<IActionResult> CreateRoleAsync([FromBody] CreateRoleDto roleDto)
-        {
-            try
-            {
-                var result = await _roleService.CreateRole(roleDto);
-                if (!result.Succeeded)
-                    return BadRequest(result.Errors);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("có lỗi sảy ra khi tạo role {error}", ex.InnerException);
-                return BadRequest(ex.Message);
-            }
-        }
-        [HttpPut("update-Role")]
-        public async Task<IActionResult> Update([FromBody] UpdateRoleDto role, string roleId)
-        {
-            try
-            {
-                var update = await _roleService.UpdateRole(roleId, role);
-                if (!update.Succeeded)
-                    return BadRequest();
-                return Content("Cập nhật vai trò thành công.");
+    [HttpGet]
+    public async Task<IActionResult> GetAllRoles()
+    {
+        var roles = await _roleService.GetAllRole();
+        return Ok(roles);
+    }
 
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError("Sảy ra lỗi khi thực hiện cập nhật: {error}", ex.InnerException);
-                return StatusCode(500, ex.Message);
-            }
-            catch (DbException ex)
-            {
-                _logger.LogError("lỗi gì ấy: {error}", ex.InnerException);
-                return StatusCode(500, ex.Message);
-            }
-        }
-        [HttpDelete("delete_role")]
-        public async Task<IActionResult> DeleteRole(string roleName)
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetRoleById(string id)
+    {
+        var role = await _roleService.GetRoleById(id);
+        return role is null ? NotFound() : Ok(role);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateRole([FromBody] CreateRoleDto dto)
+    {
+        var result = await _roleService.CreateRole(dto);
+        return result.Succeeded ? Ok(result) : BadRequest(result.Errors);
+    }
+
+    [HttpPut("{roleId}")]
+    public async Task<IActionResult> UpdateRole(string roleId, [FromBody] UpdateRoleDto dto)
+    {
+        var result = await _roleService.UpdateRole(roleId, dto);
+        return result.Succeeded ? Ok("Cập nhật thành công.") : BadRequest(result.Errors);
+    }
+
+    [HttpDelete("{roleName}")]
+    public async Task<IActionResult> DeleteRole(string roleName)
+    {
+        await _roleService.DeleteRole(roleName);
+        return Ok("Xóa vai trò thành công.");
+    }
+
+    // ✅ Gán vai trò cho User (Chuẩn – nhận model trong Body)
+    [HttpPost("assign")]
+    public async Task<IActionResult> AssignRole([FromBody] AddRoleToUser dto)
+    {
+        var result = await _roleService.AddRoleForUser(dto);
+        return result.Succeeded ? Ok("Gán vai trò thành công.") : BadRequest(result.Errors);
+    }
+
+    // ✅ Cập nhật role User
+    [HttpPut("change")]
+    public async Task<IActionResult> ChangeUserRole([FromBody] UpdateRoleForUser dto)
+    {
+        var result = await _roleService.UpdateRoleForUser(dto);
+        return result.Succeeded ? Ok("Cập nhật vai trò thành công.") : BadRequest(result.Errors);
+    }
+
+    [HttpGet("user-in-role")]
+    public async Task<IActionResult> CheckUserInRole([FromQuery] string userId, [FromQuery] string roleName)
+    {
+        var isInRole = await _roleService.IsUserInRole(userId, roleName);
+        return Ok(isInRole);
+    }
+
+    [HttpGet("with-users")]
+    public async Task<IActionResult> GetUsersWithRoles()
+    {
+        var data = await _roleService.GetUserByRole();
+        return Ok(data);
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> UpdatePermission(string roleId, [FromBody] List<UpdatePermisstion> dto)
+    {
+        var result = await _roleService.UpdatePermissionForRole(roleId, dto);
+        return result.Succeeded ? Ok("Cập nhật quyền thành công.") : BadRequest(result.Errors);
+    }
+    [HttpGet("CountRole")]
+    public async Task<IActionResult> GetCountRole()
+    {
+        try
         {
-            try
-            {
-                var role =await _roleService.DeleteRole(roleName);
-                return Content("Xóa vai trò thành công.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Không thực hiện được yeu cầu xóa. {error}", ex.InnerException);
-                return StatusCode(500, ex.Message);
-            }
-        }
-        [HttpPost("assignRole")]
-        public async Task<IActionResult> AssignRole(string userID, string roleName)
+            var role = await _roleService.GetCountRoleAsync();
+            return Ok(role);
+        } 
+        catch (Exception ex)
         {
-            try
-            {
-                var userRole = await _roleService.AssignRoleToUser(userID, roleName);
-                return Content("Thiết lập vai chò cho {userID} thành công.", userID);
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError("Xảy ra lỗi thi thực hiện thao tác này.{error}", ex.InnerException);
-                return StatusCode(500, ex.Message);
-            }
+            _logger.LogError(ex, "Error occurred while getting role count.");
+            return StatusCode(500, "An error occurred while processing your request.");
         }
-        [HttpGet("CheckRoleUser")]
-        public async Task<IActionResult> Check(string userID, string roleName)
+    }
+    [HttpPost("UpdateOrCreate")]
+    public async Task<IActionResult> Update(string Id, List<UpdatePermisstion> dto)
+    {
+        try
         {
-            try
-            {
-                var user = await _roleService.IsUserInRole(userID, roleName);
-                return Ok(user);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Không có kết quả: {error}", ex.InnerException);
-                    return StatusCode(500, ex.Message);
-                //throw;
-            }
+            var rolePermission = await _roleService.UpdatePermissionForRole(Id, dto);
+            if (!rolePermission.Succeeded)
+                return BadRequest();
+            return Ok("Thanhf cong.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "looix roi");
+            return StatusCode(500);
+        }
+    }
+    [HttpGet("GetPermision")]
+    public async Task<IActionResult> GetDetails(string roleId)
+    {
+        try
+        {
+            var perMissionDetails = _roleService.GetPermissionsByRole(roleId);
+            if (perMissionDetails == null)
+                return NotFound();
+            return Ok(perMissionDetails);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi rồi.");
+            return StatusCode(500);
         }
     }
 }

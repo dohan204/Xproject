@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using TestX.application.Repositories;
 using TestX.domain.Entities.General;
 using TestX.infrastructure.Identity;
+using TestX.application.Dtos.Subject;
 
 namespace TestX.infrastructure.Services
 {
@@ -27,21 +28,30 @@ namespace TestX.infrastructure.Services
         {
             return await _context.Subjects.AsNoTracking().ToListAsync();
         }
-        public async Task<int> AddAsync(Subject subject)
+        public async Task<int> AddAsync(Add ad)
         {
-            await _context.Subjects.AddAsync(subject);
-            await _context.SaveChangesAsync();
-            return subject.Id;
-        }
-        public async Task<int> UpdateAsync(Subject subject, int id)
-        {
-            var subjects = await _context.Subjects.FindAsync(id);
-            if(subjects != null)
+            var sub = new Subject
             {
-                subjects.Name = subject.Name;
-            }
+                Name = ad.Name,
+                Code = ad.Code
+            };
+            _context.Subjects.Add(sub);
             await _context.SaveChangesAsync();
-            return id;
+            return 1;
+        }
+        public async Task<int> UpdateAsync(Update up, int id)
+        {
+            var subject = _context.Subjects.FirstOrDefault(e => e.Id == id);
+            if (subject == null)
+                return 0;
+            var updatedSubject = new Subject
+            {
+                Name = up.Name,
+                Code = up.Code
+            };
+            _context.Subjects.Update(updatedSubject);
+            await _context.SaveChangesAsync();
+            return 1;
         }
         public async Task<int> DeleteAsync(int id)
         {

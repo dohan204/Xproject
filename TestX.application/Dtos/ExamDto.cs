@@ -12,7 +12,7 @@ namespace TestX.application.Dtos
         public string Title { get; set; }
         public int NumberOfQuestion { get; set; }
         public int SubjectId { get; set; }
-        public Subject Subject { get; set; }
+        public TestX.domain.Entities.General.Subject Subject { get; set; } // Fully qualify to avoid ambiguity
         public int PassingMark { get; set; }
         public int TestingTime { get; set; }
         public DateTime ExamDate { get; set; }

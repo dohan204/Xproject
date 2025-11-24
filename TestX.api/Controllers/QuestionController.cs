@@ -71,13 +71,28 @@ namespace TestX.api.Controllers
         public async Task<IActionResult> PagedQuestion(int level, int subject, int pageSize, int pageNumber)
         {
             var pagedQuestion = await _questionService.GetPagedQuestionById(level, subject, pageSize, pageNumber);
-            if (!pagedQuestion.Any())
+            if (pagedQuestion != null)
             {
                 logger.LogError("Không tìm được dữ liệu.");
                 throw new NotFoundException("Question", pagedQuestion);
             }
             logger.LogInformation("lấy ra thông tin thành công.");
             return Ok(pagedQuestion);
+        }
+        [HttpDelete("delete-Quesstion")]
+        public async Task<IActionResult> Del(int id)
+        {
+            try
+            {
+                var quession = await _questionService.Delete(id);
+                if (quession == 0)
+                    return NotFound();
+                return Content("Xóa thành công câu hỏi.");
+            } catch (Exception ex)
+            {
+                logger.LogInformation("lỗi rồi: {error}", ex.InnerException);
+                return BadRequest();
+            }
         }
     }
 }

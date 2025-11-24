@@ -10,5 +10,8 @@ namespace TestX.application.Dtos.ExamTestDto
     {
         public int Id { get; set; }
         public string ExamName { get; set; }
+        public int TestingTime { get; set; }
+        public int NumberOfQuestion { get; set; }
+        public string SubjectName { get; set; }
     }
 }

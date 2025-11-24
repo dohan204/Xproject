@@ -15,6 +15,7 @@ namespace TestX.application.Repositories
         Task<int> UpdateAsync(QuestionUpdateDto questionUpdateDto);
         Task DeleteAsync(int id);
         Task<List<QuestionViewDto>> RandomQuestionByLevel(int level, int subjectId, int numberOfQuestion);
-        Task<List<QuestionViewDto>> GetPagedQuestionById(int level, int subjectId, int pageSize, int pageNumber);
+        Task<PagedResult<QuestionViewDto>> GetPagedQuestionById(int level, int subjectId, int pageSize = 10, int pageNumber = 1);
+        Task<int> Delete(int id);
     }
 }

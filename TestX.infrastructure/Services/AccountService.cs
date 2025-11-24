@@ -53,13 +53,13 @@ namespace TestX.infrastructure.Services
 
         public async Task<List<AccountDto>> GetAllAccountUserAsync()
         {
-            var key = "List_Account";
-            var cached = await _cache.GetAsync<List<AccountDto>>(key);
+            //var key = "List_Account";
+            //var cached = await _cache.GetAsync<List<AccountDto>>(key);
 
-            if (cached != null && cached.Any())
-            {
-                return cached;
-            }
+            //if (cached != null && cached.Any())
+            //{
+            //    return cached;
+            //}
             //var userAccount = await _context.Users.AsNoTracking().ToListAsync();
             //var accountMapper = _mapper.Map<List<AccountDto>>(userAccount);
             //if(accountMapper != null)
@@ -67,9 +67,9 @@ namespace TestX.infrastructure.Services
             //    await _cache.SetAsync(key, userAccount, _time);
             //}
             //return accountMapper;
-            var userAccount = await _context.Users.Include(e => e.Province).ToListAsync();
-            if (userAccount != null)
-                await _cache.SetAsync(key, userAccount, _time);
+            var userAccount = await _context.Users.Include(e => e.Province).AsNoTracking().ToListAsync();
+            //if (userAccount != null)
+            //    await _cache.SetAsync(key, userAccount, _time);
             var accountDto = _mapper.Map<List<AccountDto>>(userAccount);
             return accountDto;
         }
@@ -93,13 +93,28 @@ namespace TestX.infrastructure.Services
             {
                 return account;
             }
-            var acc = await _context.Users.AsNoTracking().Include(u => u.Province)
-                .Select(u => _mapper.Map<AccountDto>(u)).FirstOrDefaultAsync(acc => acc.Id == id);
-            if(acc != null)
+            var acc = await _context.Users.Include(e => e.Province).ThenInclude(e => e.WardsCommune)
+                .AsNoTracking().FirstOrDefaultAsync(e => e.Id == id);
+            var accountDto = new AccountDto
             {
-                await _cache.SetAsync(key, acc, _time);
-            }
-            return acc;
+                Id = acc.Id,
+                UserName = acc.UserName,
+                FullName = acc.FullName,
+                Email = acc.Email,
+                PhoneNumber = acc.PhoneNumber,
+                LastLogin = acc.LastLogin,
+                DateOfBirth = acc.DateOfBirth,
+                CreatedAt = acc.CreatedAt,
+                ProvinceId = acc.ProvinceId,
+                ProvinceName = acc.Province != null ? acc.Province.Name : string.Empty,
+                WardsCommuneName = acc.WardsCommune != null ? acc.WardsCommune.Name : string.Empty
+            };
+            return accountDto;
+        }
+        public async Task<int> CountAccountAsync()
+        {
+            var count = await _context.Users.CountAsync();
+            return count;
         }
         public async Task<int> CreateAsync(CreateAccountDto accountDto)
         {
@@ -176,19 +191,21 @@ namespace TestX.infrastructure.Services
         {
             var user = await _userManager.FindByNameAsync(login.UserName);
             if (user == null) throw new Exception("không tìm thấy tài khoản người dùng.");
-
+            user.LastLogin = DateTime.Now;
             var result = await _signInManager.CheckPasswordSignInAsync(user, login.Password, false);
             if (!result.Succeeded) throw new Exception("Tài khoản hoặc mật khẩu không hợp lệ.");
             return new UserDto
             {
+                userId = user.Id,
                 Email = user.Email!,
                 FullName = user.FullName,
                 Token = _tokenService.CreateToken(user)
             };
         }
-        public async Task LogoutAsync()
+        public async Task<int> LogoutAsync()
         {
             await _signInManager.SignOutAsync();
+            return 1;
         }
         public async Task<IdentityResult> ChangePasswordAsync(string userId, string currentPassword, string newPassword)
         {

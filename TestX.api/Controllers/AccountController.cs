@@ -39,6 +39,12 @@ namespace TestX.api.Controllers
                 throw new NotFoundException("Account", "danh sách người dùng rỗng");
             return Ok(accounts);
         }
+        [HttpGet("count")]
+        public async Task<IActionResult> CountAsync()
+        {
+            var count = await _accountService.CountAccountAsync();
+            return Ok(count);
+        }
         [HttpGet("getbyId")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {
@@ -130,6 +136,20 @@ namespace TestX.api.Controllers
                 return Ok(login);
             }
             catch (Exception )
+            {
+                _logger.LogError("lỗi.");
+                throw;
+            }
+        }
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var acc = await _accountService.LogoutAsync();
+                return Ok("Thành công.");
+            }
+            catch (Exception)
             {
                 _logger.LogError("lỗi.");
                 throw;

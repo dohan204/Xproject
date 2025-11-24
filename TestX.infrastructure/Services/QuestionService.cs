@@ -13,6 +13,8 @@ using TestX.infrastructure.Identity;
 using TestX.domain.Entities.General;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
+using TestX.application;
+using System.Xml;
 
 namespace TestX.infrastructure.Services
 {
@@ -80,16 +82,39 @@ namespace TestX.infrastructure.Services
             var dtos = _mapper.Map<List<QuestionViewDto>>(randomList);
             return dtos;
         }
-        public async Task<List<QuestionViewDto>> GetPagedQuestionById(int level, int subjectId, int pageSize, int pageNumber)
+        public async Task<int> Delete(int id)
         {
-            var questions = await _context.Questions
-                .Where(s => s.SubjectId == subjectId && s.LevelId == level)
-                .OrderBy(s => s.Id)
+            var question = await _context.Questions.AsNoTracking().FirstOrDefaultAsync(q => q.Id ==id);
+            if (question == null) return 0;
+            _context.Questions.Remove(question);
+            await _context.SaveChangesAsync();
+            return 1;
+        }
+        public async Task<PagedResult<QuestionViewDto>> GetPagedQuestionById(int level, int subjectId, int pageSize = 10, int pageNumber = 1)
+        {
+            if(pageNumber < 1) pageNumber = 1;
+            if(pageSize < 1) pageSize = 10;
+
+            var query = _context.Questions.Where(s => s.SubjectId == subjectId && s.LevelId == level);
+
+            var totalCount = await query.CountAsync(); // tổng số bản ghi thỏa mãn điều kiện được đưa ra 
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            if (totalPages > 0 && pageNumber > totalPages) pageNumber = totalPages;
+
+            var questions = await query.OrderBy(s => s.Id)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
             var dtos = _mapper.Map<List<QuestionViewDto>>(questions);
-            return dtos;
+            var result = new PagedResult<QuestionViewDto>
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = dtos
+            };
+            return result;
         }
     }
 }

@@ -18,5 +18,8 @@ namespace TestX.application.Repositories
         Task<int> UpdateAsync(ExamUpdateDto examUpdateDto);
         Task<int> CreateExamWithQuestion(ExamCreateDto examCreateDto);
         Task<ExamWithQuestion?> GetDetailsWithQuestion(int id);
+        Task<ExamWithQuestion> GetRandomExam();
+        Task<int> Delete(int id);
+        Task<List<ExamViewDto>> GetExamBySubjectName(int id);
     }
 }

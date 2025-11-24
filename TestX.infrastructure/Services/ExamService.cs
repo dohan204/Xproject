@@ -24,6 +24,7 @@ namespace TestX.infrastructure.Services
         private readonly IMapper _mapper;
         private readonly IConfiguration _configuration;
         private readonly TimeSpan _time;
+        private readonly Random _random = new Random();
         public ExamService(IdentityContext identityContext, IMapper mapper, 
             ICacheService cacheService, IConfiguration configuration)
         {
@@ -33,7 +34,7 @@ namespace TestX.infrastructure.Services
             _configuration = configuration;
             _time = TimeSpan.FromMinutes(configuration.GetValue<int>("CacheSettings:Expiry"));
         }
-            public async Task<List<ExamViewDetailsDto>> GetAllExamDetails()
+        public async Task<List<ExamViewDetailsDto>> GetAllExamDetails()
             {
             var examDto = await _identityContext.Exams
                 .ProjectTo<ExamViewDetailsDto>(_mapper.ConfigurationProvider)
@@ -44,7 +45,7 @@ namespace TestX.infrastructure.Services
         {
             var query = _identityContext.Exams.AsQueryable();
             if (!string.IsNullOrEmpty(names))
-                query = query.Where(name => EF.Functions.Like(EF.Functions.Collate(name.Title, "SQL_Latin1_General_CP1_CI_AS"), $"%{names}%"));
+                query = query.Where(name => EF.Functions.Like(EF.Functions.Collate(name.Subject.Name, "SQL_Latin1_General_CP1_CI_AS"), $"%{names}%"));
             var exam = await query.FirstOrDefaultAsync();
             var dtos = _mapper.Map<ExamViewDto>(exam);
             return dtos;
@@ -138,6 +139,117 @@ namespace TestX.infrastructure.Services
                 return null;
             await _cacheService.SetAsync(key, groupbyDetails, _time);
             return groupbyDetails;
+        }
+        public async Task<ExamWithQuestion> GetRandomExam()
+        {
+            // biến đổi thành danh sách
+            var randomExam = await _identityContext.Exams.ToListAsync();
+
+            // lấy ngẫu nhiên một đề thi
+            var randomIndex = _random.Next(0,randomExam.Count);
+
+            // lấy ra đề thi đó bằng id và trả về chi tiết đề thi
+            var randomExamId = randomExam[randomIndex];
+
+            var examDetails = new ExamWithQuestion()
+            {
+                Id = randomExamId.Id,
+                Name = randomExamId.Title,
+                TimeTest = randomExamId.TestingTime,
+                SubjectName = randomExamId.Subject?.Name ?? "Không lấy được tên môn thi",
+                NumberOfQuestions = randomExamId.NumberOfQuestion,
+                Question = await _identityContext.ExamDetails
+                    .Where(ed => ed.ExamId == randomExamId.Id)
+                    .Join(_identityContext.Questions,
+                        ed => ed.QuestionId,
+                        q => q.Id,
+                        (ed, q) => new QuestionWithExamDto
+                        {
+                            Id = q.Id,
+                            Content = q.Content,
+                            Answer = q.Answer,
+                            OptionA = q.OptionA,
+                            OptionB = q.OptionB,
+                            OptionC = q.OptionC,
+                            OptionD = q.OptionD,
+                            CreatedAt = q.CreatedAt,
+                            ModifiedAt = q.ModifiedAt
+                        })
+                    .ToListAsync()
+            };
+            return examDetails;
+        }
+        public async Task<int> Delete(int id)
+        {
+            // remove cached exam details if present
+            //var cacheKey = $"Question_Exam_{id}";
+            //await _cacheService.RemoveAsync(cacheKey);
+
+            // find exam
+            var exam = await _identityContext.Exams.FirstOrDefaultAsync(e => e.Id == id);
+            if (exam == null) return 0;
+
+            // use transaction to ensure consistency across related deletes
+            await using var transaction = await _identityContext.Database.BeginTransactionAsync();
+            try
+            {
+                // remove exam details
+                var examDetails = await _identityContext.ExamDetails
+                    .Where(ed => ed.ExamId == id)
+                    .ToListAsync();
+                if (examDetails.Any())
+                    _identityContext.ExamDetails.RemoveRange(examDetails);
+
+                // remove choice exams (if any)
+                var choiceExams = await _identityContext.Set<ChoiceExam>()
+                    .Where(c => c.ExamId == id)
+                    .ToListAsync();
+                if (choiceExams.Any())
+                    _identityContext.Set<ChoiceExam>().RemoveRange(choiceExams);
+
+                // remove student exams and their details (if any)
+                var studentExams = await _identityContext.Set<StudentExam>()
+                    .Where(se => se.ExamId == id)
+                    .ToListAsync();
+                if (studentExams.Any())
+                {
+                    var studentExamIds = studentExams.Select(se => se.Id).ToList();
+                    var studentExamDetails = await _identityContext.Set<StudentExamDetails>()
+                        .Where(d => studentExamIds.Contains(d.StudentExamId))
+                        .ToListAsync();
+                    if (studentExamDetails.Any())
+                        _identityContext.Set<StudentExamDetails>().RemoveRange(studentExamDetails);
+
+                    _identityContext.Set<StudentExam>().RemoveRange(studentExams);
+                }
+
+                // finally remove the exam itself
+                _identityContext.Exams.Remove(exam);
+
+                await _identityContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return id;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        public async Task<List<ExamViewDto>> GetExamBySubjectName(int id)
+        {
+            var examBySubject = from e in _identityContext.Exams
+                                join s in _identityContext.Subjects on e.SubjectId equals s.Id
+                                where s.Id == id
+                                select new ExamViewDto
+                                {
+                                    Id = e.Id,
+                                    ExamName = e.Title,
+                                    TestingTime= e.TestingTime,
+                                    NumberOfQuestion = e.NumberOfQuestion,
+                                    SubjectName = s.Name
+                                };
+            return await examBySubject.ToListAsync();
         }
     }
 }

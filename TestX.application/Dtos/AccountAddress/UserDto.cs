@@ -8,6 +8,7 @@ namespace TestX.application.Dtos.AccountAddress
 {
     public class UserDto
     {
+        public string userId { get; set; }
         public string Email { get; set; }
         public string FullName { get; set; }
         public string Token { get; set; }
