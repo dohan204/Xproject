@@ -34,6 +34,21 @@ namespace TestX.api.Controllers
                 return NotFound(ex.Message);
             }
         }
+        [HttpGet("countExam")]
+        public async Task<IActionResult> CountExam()
+        {
+            try
+            {
+                var count = await _examRepository.GetExamCount();
+                return Ok(count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi thực hiện truy suất: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+                throw;
+            }
+        }
         [HttpGet("getNameExam")]
         public async Task<IActionResult> GetName(string name)
         {
@@ -125,5 +140,33 @@ namespace TestX.api.Controllers
                 return NotFound(ex.Message);
             }
         }
-    } 
+        [HttpGet("examBySubjectName")]
+        public async Task<IActionResult> GetBySubject(string name)
+        {
+            try
+            {
+                var exam = await _examRepository.GetBySubject(name);
+                return Ok(exam);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi lấy dữ liệu theo tên môn học: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+        [HttpPost("submitExam/{examId}")]
+        public async Task<IActionResult> SubmitExam([FromBody] Dictionary<int, string> resultFromFE, [Required] int examId)
+        {
+            try
+            {
+                var score = await _examRepository.HandleDataSubmit(resultFromFE, examId);
+                return Ok(score);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi nộp bài thi: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+    }
 }

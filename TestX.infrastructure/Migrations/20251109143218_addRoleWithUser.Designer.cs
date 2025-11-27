@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestX.infrastructure.Identity;
 
@@ -11,9 +12,11 @@ using TestX.infrastructure.Identity;
 namespace TestX.infrastructure.Migrations
 {
     [DbContext(typeof(IdentityContext))]
-    partial class IdentityContextModelSnapshot : ModelSnapshot
+    [Migration("20251109143218_addRoleWithUser")]
+    partial class addRoleWithUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -184,12 +187,18 @@ namespace TestX.infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("UsersId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex")
                         .HasFilter("[NormalizedName] IS NOT NULL");
+
+                    b.HasIndex("UsersId");
 
                     b.ToTable("AspNetRoles", (string)null);
                 });
@@ -255,11 +264,12 @@ namespace TestX.infrastructure.Migrations
                     b.Property<int>("ProvinceId")
                         .HasColumnType("int");
 
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("StudentExamId")
-                        .HasColumnType("int");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
@@ -286,8 +296,7 @@ namespace TestX.infrastructure.Migrations
 
                     b.HasIndex("ProvinceId");
 
-                    b.HasIndex("StudentExamId")
-                        .IsUnique();
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("WardsCommuneId");
 
@@ -848,42 +857,6 @@ namespace TestX.infrastructure.Migrations
                     b.ToTable("Subjects");
                 });
 
-            modelBuilder.Entity("TestX.domain.Entities.General.Topic", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SubjectId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SubjectId1")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubjectId1");
-
-                    b.ToTable("Topics");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("TestX.domain.Entities.AccountRole.ApplicationRole", null)
@@ -945,6 +918,17 @@ namespace TestX.infrastructure.Migrations
                         .HasConstraintName("FK_AccountPermissions_Function");
                 });
 
+            modelBuilder.Entity("TestX.domain.Entities.AccountRole.ApplicationRole", b =>
+                {
+                    b.HasOne("TestX.domain.Entities.AccountRole.ApplicationUser", "Users")
+                        .WithMany()
+                        .HasForeignKey("UsersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Users");
+                });
+
             modelBuilder.Entity("TestX.domain.Entities.AccountRole.ApplicationUser", b =>
                 {
                     b.HasOne("TestX.domain.Entities.AccountRole.Province", "Province")
@@ -953,9 +937,9 @@ namespace TestX.infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TestX.domain.Entities.General.StudentExam", "StudentExam")
-                        .WithOne("ApplicationUser")
-                        .HasForeignKey("TestX.domain.Entities.AccountRole.ApplicationUser", "StudentExamId")
+                    b.HasOne("TestX.domain.Entities.AccountRole.ApplicationRole", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -967,7 +951,7 @@ namespace TestX.infrastructure.Migrations
 
                     b.Navigation("Province");
 
-                    b.Navigation("StudentExam");
+                    b.Navigation("Role");
 
                     b.Navigation("WardsCommune");
                 });
@@ -1046,7 +1030,7 @@ namespace TestX.infrastructure.Migrations
                     b.HasOne("TestX.domain.Entities.General.Subject", "Subject")
                         .WithMany("Exams")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Subject");
@@ -1063,7 +1047,7 @@ namespace TestX.infrastructure.Migrations
                     b.HasOne("TestX.domain.Entities.General.Question", "Question")
                         .WithMany("ExamDetails")
                         .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_ExamDetails_Question");
 
@@ -1089,7 +1073,7 @@ namespace TestX.infrastructure.Migrations
                     b.HasOne("TestX.domain.Entities.General.Subject", "Subject")
                         .WithMany("Questions")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_Questions_Subject");
 
@@ -1140,17 +1124,6 @@ namespace TestX.infrastructure.Migrations
                     b.Navigation("History");
 
                     b.Navigation("StudentExam");
-                });
-
-            modelBuilder.Entity("TestX.domain.Entities.General.Topic", b =>
-                {
-                    b.HasOne("TestX.domain.Entities.General.Subject", "Subject")
-                        .WithMany()
-                        .HasForeignKey("SubjectId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("TestX.domain.Entities.AccountRole.ApplicationRole", b =>
@@ -1211,9 +1184,6 @@ namespace TestX.infrastructure.Migrations
 
             modelBuilder.Entity("TestX.domain.Entities.General.StudentExam", b =>
                 {
-                    b.Navigation("ApplicationUser")
-                        .IsRequired();
-
                     b.Navigation("StudentExamDetails");
                 });
 

@@ -22,6 +22,8 @@ using TestX.infrastructure.Identity;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace TestX.infrastructure.Services
 {
@@ -187,21 +189,23 @@ namespace TestX.infrastructure.Services
             var emailUser = await _userManager.FindByEmailAsync(email);
             return emailUser != null;
         }
-        public async Task<UserDto> LoginAsync(LoginDto login)
-        {
-            var user = await _userManager.FindByNameAsync(login.UserName);
-            if (user == null) throw new Exception("không tìm thấy tài khoản người dùng.");
-            user.LastLogin = DateTime.Now;
-            var result = await _signInManager.CheckPasswordSignInAsync(user, login.Password, false);
-            if (!result.Succeeded) throw new Exception("Tài khoản hoặc mật khẩu không hợp lệ.");
+        public async Task<UserDto> LoginAsync(LoginDto login, string? ReturlUrl = null)
+            {   var user = await _userManager.FindByNameAsync(login.UserName);
+                if (user == null) throw new Exception("không tìm thấy tài khoản người dùng.");
+                user.LastLogin = DateTime.Now;
+                var result = await _signInManager.CheckPasswordSignInAsync(user, login.Password, false);
+            if (!result.Succeeded)
+                throw new Exception("tài khoản hoặc mật khẩu không đúng");
+            bool isValidReturnUrl = IsLocalUrl(ReturlUrl);
             return new UserDto
             {
                 userId = user.Id,
                 Email = user.Email!,
                 FullName = user.FullName,
-                Token = _tokenService.CreateToken(user)
+                Token = await _tokenService.CreateToken(user),
+                ReturnUrl = isValidReturnUrl ? ReturlUrl : null
             };
-        }
+            }
         public async Task<int> LogoutAsync()
         {
             await _signInManager.SignOutAsync();
@@ -218,5 +222,15 @@ namespace TestX.infrastructure.Services
             }
             return result;
         }
+        private bool IsLocalUrl(string? url)
+        {
+            if(string.IsNullOrEmpty(url)) return false;
+            if (url.StartsWith("/") && !url.StartsWith("//"))
+                return true;
+            if (url.StartsWith("~/"))
+            return true;
+            return false;
+        }
     }
+
 }

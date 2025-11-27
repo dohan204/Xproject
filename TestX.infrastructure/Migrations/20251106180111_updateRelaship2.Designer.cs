@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TestX.infrastructure.Identity;
 
@@ -11,9 +12,11 @@ using TestX.infrastructure.Identity;
 namespace TestX.infrastructure.Migrations
 {
     [DbContext(typeof(IdentityContext))]
-    partial class IdentityContextModelSnapshot : ModelSnapshot
+    [Migration("20251106180111_updateRelaship2")]
+    partial class updateRelaship2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -258,9 +261,6 @@ namespace TestX.infrastructure.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("StudentExamId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
@@ -285,9 +285,6 @@ namespace TestX.infrastructure.Migrations
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.HasIndex("ProvinceId");
-
-                    b.HasIndex("StudentExamId")
-                        .IsUnique();
 
                     b.HasIndex("WardsCommuneId");
 
@@ -343,13 +340,16 @@ namespace TestX.infrastructure.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasAlternateKey("Code")
+                        .HasName("AK_Province_Code");
 
                     b.ToTable("Provinces");
                 });
@@ -409,12 +409,18 @@ namespace TestX.infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ProvinceId")
+                    b.Property<string>("ProvinceId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ProvinceId1")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProvinceId");
+
+                    b.HasIndex("ProvinceId1");
 
                     b.ToTable("WardsCommunes");
                 });
@@ -848,42 +854,6 @@ namespace TestX.infrastructure.Migrations
                     b.ToTable("Subjects");
                 });
 
-            modelBuilder.Entity("TestX.domain.Entities.General.Topic", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ModifiedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SubjectId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SubjectId1")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SubjectId1");
-
-                    b.ToTable("Topics");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("TestX.domain.Entities.AccountRole.ApplicationRole", null)
@@ -948,26 +918,18 @@ namespace TestX.infrastructure.Migrations
             modelBuilder.Entity("TestX.domain.Entities.AccountRole.ApplicationUser", b =>
                 {
                     b.HasOne("TestX.domain.Entities.AccountRole.Province", "Province")
-                        .WithMany()
+                        .WithMany("ApplicationUser")
                         .HasForeignKey("ProvinceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("TestX.domain.Entities.General.StudentExam", "StudentExam")
-                        .WithOne("ApplicationUser")
-                        .HasForeignKey("TestX.domain.Entities.AccountRole.ApplicationUser", "StudentExamId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("TestX.domain.Entities.AccountRole.WardsCommune", "WardsCommune")
                         .WithMany()
                         .HasForeignKey("WardsCommuneId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Province");
-
-                    b.Navigation("StudentExam");
 
                     b.Navigation("WardsCommune");
                 });
@@ -1007,10 +969,17 @@ namespace TestX.infrastructure.Migrations
 
             modelBuilder.Entity("TestX.domain.Entities.AccountRole.WardsCommune", b =>
                 {
+                    b.HasOne("TestX.domain.Entities.AccountRole.Province", null)
+                        .WithMany()
+                        .HasForeignKey("ProvinceId")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("TestX.domain.Entities.AccountRole.Province", "Province")
                         .WithMany("WardsCommune")
-                        .HasForeignKey("ProvinceId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("ProvinceId1")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Province");
@@ -1046,7 +1015,7 @@ namespace TestX.infrastructure.Migrations
                     b.HasOne("TestX.domain.Entities.General.Subject", "Subject")
                         .WithMany("Exams")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Subject");
@@ -1063,7 +1032,7 @@ namespace TestX.infrastructure.Migrations
                     b.HasOne("TestX.domain.Entities.General.Question", "Question")
                         .WithMany("ExamDetails")
                         .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_ExamDetails_Question");
 
@@ -1089,7 +1058,7 @@ namespace TestX.infrastructure.Migrations
                     b.HasOne("TestX.domain.Entities.General.Subject", "Subject")
                         .WithMany("Questions")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_Questions_Subject");
 
@@ -1142,17 +1111,6 @@ namespace TestX.infrastructure.Migrations
                     b.Navigation("StudentExam");
                 });
 
-            modelBuilder.Entity("TestX.domain.Entities.General.Topic", b =>
-                {
-                    b.HasOne("TestX.domain.Entities.General.Subject", "Subject")
-                        .WithMany()
-                        .HasForeignKey("SubjectId1")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Subject");
-                });
-
             modelBuilder.Entity("TestX.domain.Entities.AccountRole.ApplicationRole", b =>
                 {
                     b.Navigation("RolePermissions");
@@ -1172,6 +1130,8 @@ namespace TestX.infrastructure.Migrations
 
             modelBuilder.Entity("TestX.domain.Entities.AccountRole.Province", b =>
                 {
+                    b.Navigation("ApplicationUser");
+
                     b.Navigation("WardsCommune");
                 });
 
@@ -1211,9 +1171,6 @@ namespace TestX.infrastructure.Migrations
 
             modelBuilder.Entity("TestX.domain.Entities.General.StudentExam", b =>
                 {
-                    b.Navigation("ApplicationUser")
-                        .IsRequired();
-
                     b.Navigation("StudentExamDetails");
                 });
 

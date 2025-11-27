@@ -14,11 +14,11 @@ using TestX.domain.Entities.General;
 
 namespace TestX.infrastructure.Identity
 {
-    public class IdentityContext: IdentityDbContext<ApplicationUser, ApplicationRole, string>
+    public class IdentityContext : IdentityDbContext<ApplicationUser, ApplicationRole, string>
     {
         public IdentityContext(DbContextOptions<IdentityContext> options) : base(options)
         {
-        }   
+        }
         public DbSet<Province> Provinces { get; set; }
         //public DbSet<AccountPermission> AccountPermissions { get; set; }
         public DbSet<WardsCommune> WardsCommunes { get; set; }
@@ -30,7 +30,7 @@ namespace TestX.infrastructure.Identity
         public DbSet<SchoolLevel> SchoolLevel { get; set; }
         public DbSet<Exam> Exams { get; set; }
         public DbSet<StudentExam> StudentExams { get; set; }
-        public DbSet<ExamDetails> ExamDetails { get; set; } 
+        public DbSet<ExamDetails> ExamDetails { get; set; }
         public DbSet<History> Histories { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<QuestionType> QuestionTypes { get; set; }
@@ -38,17 +38,21 @@ namespace TestX.infrastructure.Identity
         public DbSet<StudentExamDetails> StudentExamDetails { get; set; }
         public DbSet<Level> Levels { get; set; }
         public DbSet<ChoiceExam> Choices { get; set; }
+        public DbSet<Topic> Topics { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
             // User - Province (1-1)
-            builder.Entity<Province>()
-                .HasMany(u => u.ApplicationUser)
-                .WithOne(p => p.Province)
+            builder.Entity<ApplicationUser>()
+                .HasOne(u => u.Province)
+                .WithMany()
                 .HasForeignKey(p => p.ProvinceId)
                 .OnDelete(DeleteBehavior.Restrict);
-
             // Province - WardsCommunes (1-n)
+            builder.Entity<ApplicationUser>()
+                .HasOne(e => e.StudentExam)
+                .WithOne(se => se.ApplicationUser)
+                .OnDelete(DeleteBehavior.Restrict);
             builder.Entity<Province>()
                 .HasMany(w => w.WardsCommune)
                 .WithOne(p => p.Province)
@@ -119,27 +123,17 @@ namespace TestX.infrastructure.Identity
                 .WithOne(e => e.Exam)
                 .HasForeignKey(e => e.ExamId)
                 .OnDelete(DeleteBehavior.Restrict);
-
             builder.Entity<ExamDetails>()
                 .HasOne(e => e.Question)
                 .WithMany(e => e.ExamDetails)
                 .HasConstraintName("FK_ExamDetails_Question")
-                .HasForeignKey(e => e.QuestionId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasForeignKey(e => e.QuestionId);
 
             builder.Entity<Subject>()
                 .HasMany(s => s.Questions)
                 .WithOne(q => q.Subject)
                 .HasForeignKey(q => q.SubjectId)
-                .HasConstraintName("FK_Questions_Subject")
-                .OnDelete(DeleteBehavior.Restrict);
-
-
-            builder.Entity<Subject>()
-                .HasMany(e => e.Exams)
-                .WithOne(s => s.Subject)
-                .HasForeignKey(e => e.SubjectId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasConstraintName("FK_Questions_Subject");
 
 
             builder.Entity<QuestionType>()
@@ -162,7 +156,7 @@ namespace TestX.infrastructure.Identity
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ChoiceExam>()
-                .HasKey(key =>  new { key.AccountId, key.HistoryId, key.ExamId });
+                .HasKey(key => new { key.AccountId, key.HistoryId, key.ExamId });
 
 
             builder.Entity<ChoiceExam>()
@@ -177,7 +171,26 @@ namespace TestX.infrastructure.Identity
                 .WithMany()
                 .HasForeignKey(e => e.ExamId)
                 .OnDelete(DeleteBehavior.Restrict);
+            foreach (var foreignKey in builder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            {
+                // Kiểm tra xem hành vi xóa có phải là Cascade theo mặc định (nếu bạn chưa đặt Restrict ở mọi nơi)
+                // và thay đổi nó nếu cần để tránh lỗi cycles.
+                // Dòng mã dưới đây tìm tất cả các khóa ngoại mà không được cấu hình rõ ràng
+                // và đặt chúng thành Restrict nếu chúng là bắt buộc.
+                if (foreignKey.DeleteBehavior == DeleteBehavior.Cascade)
+                {
+                    foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+                }
 
+                // Hoặc cụ thể hơn, nếu lỗi chỉ liên quan đến các bảng AspNet* mặc định:
+                // if (foreignKey.PrincipalEntityType.Name.Contains("Identity") || foreignKey.PrincipalEntityType.Name.Contains("Application"))
+                // {
+                //     foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+                // }
+            }
+
+            // Một cách tiếp cận khác là sử dụng DeleteBehavior.ClientSetNull nếu các cột khóa ngoại là nullable.
+            // Nếu các khóa ngoại không phải nullable (như trong AspNetUsers), hãy dùng Restrict hoặc NoAction.
         }
     }
 }

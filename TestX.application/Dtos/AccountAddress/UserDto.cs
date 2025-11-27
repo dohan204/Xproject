@@ -12,5 +12,6 @@ namespace TestX.application.Dtos.AccountAddress
         public string Email { get; set; }
         public string FullName { get; set; }
         public string Token { get; set; }
+        public string ReturnUrl { get; set; }
     }
 }

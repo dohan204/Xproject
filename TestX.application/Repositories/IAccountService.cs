@@ -22,7 +22,7 @@ namespace TestX.application.Repositories
         //Task<bool> ChangePasswordAsync(ApplicationUser user, string currentPassword, string newPassword);
         //string CreateToken(ApplicationUser user);
         Task<bool> ExistsEmailAsync(string email);
-        Task<UserDto> LoginAsync(LoginDto login);
+        Task<UserDto> LoginAsync(LoginDto login, string? ReturnUrl = null);
         Task<int> LogoutAsync();
         Task<IdentityResult> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
     }

@@ -126,13 +126,14 @@ namespace TestX.api.Controllers
 
         }
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDto loginDto)
+        public async Task<IActionResult> Login(LoginDto loginDto, string? ReturnUrl = null)
         {
+            
             try
             {
                 var login = await _accountService.LoginAsync(loginDto);
-                if (login == null)
-                    return NotFound();
+                if (login.ReturnUrl != null)
+                    return Redirect(login.ReturnUrl);
                 return Ok(login);
             }
             catch (Exception )

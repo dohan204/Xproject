@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNetCore.Identity;
+using TestX.domain.Entities.General;
 
 
 namespace TestX.domain.Entities.AccountRole
@@ -14,6 +15,8 @@ namespace TestX.domain.Entities.AccountRole
         public DateTime? LastLogin { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public int ProvinceId { get; set; }
+        public int StudentExamId { get; set; }
+        public StudentExam StudentExam { get; set; }
         public Province Province { get; set; }
 
         public int WardsCommuneId { get; set; }

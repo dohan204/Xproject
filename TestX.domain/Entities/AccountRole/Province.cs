@@ -13,14 +13,15 @@ namespace TestX.domain.Entities.AccountRole
         public string Name { get; set; }
         public string Code { get; set; }
         public ICollection<WardsCommune> WardsCommune { get; set; } = new List<WardsCommune>();
-        public ICollection<ApplicationUser> ApplicationUser { get; set; } 
+        //public ICollection<ApplicationUser> ApplicationUser { get; set; }
+        //public ApplicationUser ApplicationUser { get; set; }
         //public ICollection<District> Districts { get; set; }
         public Province(int Id,string name, string code)
         {
             this.Id = Id;
             this.Name = name;
             this.Code = code;
-            ApplicationUser = new List<ApplicationUser>();
+            //ApplicationUser = new List<ApplicationUser>();
         }
     }
 }

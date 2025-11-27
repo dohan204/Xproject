@@ -9,7 +9,7 @@ namespace TestX.domain.Entities.General
     public class StudentExamDetails
     {
         public int Id { get; set; }
-        public int StudentExamId { get;set; }
+        public string StudentExamId { get;set; }
         public StudentExam StudentExam { get; set; }
         public int QuestionId { get; set; }
         public string StudentAnswer { get; set; }
@@ -18,7 +18,7 @@ namespace TestX.domain.Entities.General
         public int IsCorrect { get; set; }
         public DateTime? CreateAt { get; set; } = DateTime.UtcNow;
         public DateTime? ModifiedAt { get; set; } = DateTime.UtcNow;
-        public string CreatedBy { get; set; }
-        public string ModifiedBy { get; set; }
+        public string? CreatedBy { get; set; }
+        public string? ModifiedBy { get; set; }
     }
 }

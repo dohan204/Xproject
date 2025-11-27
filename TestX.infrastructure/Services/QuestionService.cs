@@ -36,6 +36,12 @@ namespace TestX.infrastructure.Services
                 ProjectTo<QuestionViewDto>(_mapper.ConfigurationProvider).ToListAsync();
             return questions;
         }
+        public async Task<int> GetAllCountQuestion()
+        {
+                       var count = await _context.Questions.CountAsync();
+            return count;
+
+        }
         public async Task<QuestionViewDto> GetQuestion(int questionId)
         {
             var question = await _context.Questions.ProjectTo<QuestionViewDto>(_mapper.ConfigurationProvider)

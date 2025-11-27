@@ -9,6 +9,6 @@ namespace TestX.application.Repositories
 {
     public interface ITokenService
     {
-        string CreateToken(ApplicationUser user);
+        Task<string> CreateToken(ApplicationUser user);
     }
 }

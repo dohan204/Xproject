@@ -26,6 +26,13 @@ namespace TestX.api.Controllers
             logger.LogInformation("lấy thành công danh sách Câu hỏi.");
             return Ok(questions);
         }
+        [HttpGet("countQuestion")]
+        public async Task<IActionResult> CountQuestion()
+        {
+            var count = await _questionService.GetAllCountQuestion();
+            logger.LogInformation($"Tổng số câu hỏi là: {count}");
+            return Ok(count);
+        }
         [HttpGet("question/{id}")]
         public async Task<IActionResult> GetById([FromQuery] int id)
         {

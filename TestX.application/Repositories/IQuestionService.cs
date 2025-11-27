@@ -10,6 +10,7 @@ namespace TestX.application.Repositories
     public interface IQuestionService
     {
         Task<List<QuestionViewDto>> AllQuestion();
+        Task<int> GetAllCountQuestion();
         Task<QuestionViewDto> GetQuestion(int id);
         Task<int> CreateAsync(QuestionCreateDto questionCreateDto);
         Task<int> UpdateAsync(QuestionUpdateDto questionUpdateDto);
