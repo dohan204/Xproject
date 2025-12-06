@@ -1,13 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
-using TestX.application.InterfacesContext;
 using TestX.domain.Entities.AccountRole;
 using TestX.domain.Entities.General;
 
@@ -38,7 +30,8 @@ namespace TestX.infrastructure.Identity
         public DbSet<StudentExamDetails> StudentExamDetails { get; set; }
         public DbSet<Level> Levels { get; set; }
         public DbSet<ChoiceExam> Choices { get; set; }
-        public DbSet<Topic> Topics { get; set; }
+        //public DbSet<Topic> Topics { get; set; }
+        public DbSet<ExamFavorite> ExamFavorites { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -49,9 +42,10 @@ namespace TestX.infrastructure.Identity
                 .HasForeignKey(p => p.ProvinceId)
                 .OnDelete(DeleteBehavior.Restrict);
             // Province - WardsCommunes (1-n)
-            builder.Entity<ApplicationUser>()
-                .HasOne(e => e.StudentExam)
-                .WithOne(se => se.ApplicationUser)
+            builder.Entity<StudentExam>()
+                .HasOne(se => se.ApplicationUser)
+                .WithMany()
+                .HasForeignKey(se => se.AccountId)
                 .OnDelete(DeleteBehavior.Restrict);
             builder.Entity<Province>()
                 .HasMany(w => w.WardsCommune)
@@ -171,23 +165,28 @@ namespace TestX.infrastructure.Identity
                 .WithMany()
                 .HasForeignKey(e => e.ExamId)
                 .OnDelete(DeleteBehavior.Restrict);
-            foreach (var foreignKey in builder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
-            {
-                // Kiểm tra xem hành vi xóa có phải là Cascade theo mặc định (nếu bạn chưa đặt Restrict ở mọi nơi)
-                // và thay đổi nó nếu cần để tránh lỗi cycles.
-                // Dòng mã dưới đây tìm tất cả các khóa ngoại mà không được cấu hình rõ ràng
-                // và đặt chúng thành Restrict nếu chúng là bắt buộc.
-                if (foreignKey.DeleteBehavior == DeleteBehavior.Cascade)
-                {
-                    foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
-                }
+            builder.Entity<ExamFavorite>()
+                .HasOne(ef => ef.ApplicationUser)
+                .WithMany()
+                .HasForeignKey(ef => ef.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+            //foreach (var foreignKey in builder.Model.GetEntityTypes().SelectMany(e => e.GetForeignKeys()))
+            //{
+            //    // Kiểm tra xem hành vi xóa có phải là Cascade theo mặc định (nếu bạn chưa đặt Restrict ở mọi nơi)
+            //    // và thay đổi nó nếu cần để tránh lỗi cycles.
+            //    // Dòng mã dưới đây tìm tất cả các khóa ngoại mà không được cấu hình rõ ràng
+            //    // và đặt chúng thành Restrict nếu chúng là bắt buộc.
+            //    if (foreignKey.DeleteBehavior == DeleteBehavior.Cascade)
+            //    {
+            //        foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+            //    }
 
-                // Hoặc cụ thể hơn, nếu lỗi chỉ liên quan đến các bảng AspNet* mặc định:
-                // if (foreignKey.PrincipalEntityType.Name.Contains("Identity") || foreignKey.PrincipalEntityType.Name.Contains("Application"))
-                // {
-                //     foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
-                // }
-            }
+            //    // Hoặc cụ thể hơn, nếu lỗi chỉ liên quan đến các bảng AspNet* mặc định:
+            //    // if (foreignKey.PrincipalEntityType.Name.Contains("Identity") || foreignKey.PrincipalEntityType.Name.Contains("Application"))
+            //    // {
+            //    //     foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
+            //    // }
+            //}
 
             // Một cách tiếp cận khác là sử dụng DeleteBehavior.ClientSetNull nếu các cột khóa ngoại là nullable.
             // Nếu các khóa ngoại không phải nullable (như trong AspNetUsers), hãy dùng Restrict hoặc NoAction.

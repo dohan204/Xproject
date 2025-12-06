@@ -5,6 +5,7 @@ using TestX.api.Middleware;
 
 //using TestX.api.CustomMiddleware;
 using TestX.application.Mapping;
+using TestX.application.Mapping.Exam;
 using TestX.application.Mapping.Exams;
 using TestX.application.Repositories;
 using TestX.domain.Entities.General;
@@ -21,6 +22,8 @@ builder.Services.AddCors(options =>
         policy.AllowAnyHeader()
             .AllowAnyOrigin()
             .AllowAnyMethod();
+            
+
     });
 
 });
@@ -40,9 +43,15 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IExamRepository, ExamService >();
 builder.Services.AddScoped<IWardsCommuneService, WardsCommuneService>();
+builder.Services.AddScoped<RatingScoreSubject, RatingExamService >();
 builder.Services.AddAutoMapper(typeof(AccountMapping).Assembly,
-    typeof(RoleMapping).Assembly, typeof(ProvinceMapping).Assembly,
-    typeof(School).Assembly, typeof(QuestionExam).Assembly);
+    typeof(TestX.application.Mapping.RoleMapping).Assembly, typeof(ProvinceMapping).Assembly,
+    typeof(School).Assembly, typeof(QuestionExam).Assembly, typeof(Rank).Assembly);
+
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -75,8 +84,10 @@ app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowedAll");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();

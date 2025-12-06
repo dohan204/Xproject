@@ -11,6 +11,7 @@ namespace TestX.application.Dtos.ExamTestDto
         public int Id { get; set; }
         public string Name { get; set; }
         public string SubjectName { get; set; }
+        public int NumberOfExam { get; set; }
         public int NumberOfQuestions { get; set; }
         public int TimeTest { get; set; }
         public List<QuestionWithExamDto> Question { get; set; }

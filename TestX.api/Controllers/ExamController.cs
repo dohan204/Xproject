@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 using TestX.application.Dtos.ExamTestDto;
 using TestX.application.Repositories;
+using TestX.domain.Entities.AccountRole;
 
 namespace TestX.api.Controllers
 {
@@ -160,12 +161,87 @@ namespace TestX.api.Controllers
             try
             {
                 var score = await _examRepository.HandleDataSubmit(resultFromFE, examId);
+                Console.WriteLine("AUTH HEADER: " + HttpContext.Request.Headers["Authorization"]);
+                _logger.LogInformation("User submitted exam {examId} with score {score}", examId, score);
                 return Ok(score);
             }
             catch (Exception ex)
             {
                 _logger.LogError("lỗi khi nộp bài thi: {error}", ex.InnerException);
                 return NotFound(ex.Message);
+            }
+        }
+        [HttpPost("FavoriteExam")]
+        public async Task<IActionResult> FavoriteExam([FromBody] AddFavoriteExamDto dto)
+        {
+            try
+            {
+                var result = await _examRepository.AddExamFavorites(dto);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi thêm bài thi yêu thích: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+        [HttpGet("GetFavoriteExams")]
+        public async Task<IActionResult> GetFavoriteExams([FromQuery] string accountId)
+        {
+            try
+            {
+                var favoriteExams = await _examRepository.GetFavoriteExamsByAccountId(accountId);
+                return Ok(favoriteExams);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi lấy danh sách bài thi yêu thích: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+        [HttpGet("GetExamOfUser")]
+        public async Task<IActionResult> GetExamOfUser([FromQuery] string accountId)
+        {
+            try
+            {
+                var exams = await _examRepository.GetExamOfUser(accountId);
+                return Ok(exams);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi lấy danh sách bài thi của người dùng: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+        [HttpPost("Submit")]
+        public async Task<IActionResult> OnSumbitDataFree([FromBody] Dictionary<int, string> answers, [Required] int examId)
+        {
+            try
+            {
+                var result = await _examRepository.OnSumbitDataFree(answers, examId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("lỗi khi nộp bài thi miễn phí: {error}", ex.InnerException);
+                return NotFound(ex.Message);
+            }
+        }
+        [HttpDelete("DeleteFavorite")]
+        public async Task<IActionResult> DeleteFa([FromQuery] int Id)
+        {
+            try
+            {
+                var f = _examRepository.RemoveFavorites(Id);
+                _logger.LogInformation("Xóa Bài thi yêu thích thành công");
+                return Ok(f);
+            }
+            catch (Exception ex)
+            {
+                {
+                    _logger.LogError("Lỗi xử lý xóa bài thi yêu thích: {ex}", ex);
+                    return NotFound(ex.Message);
+                }
             }
         }
     }

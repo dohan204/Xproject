@@ -36,7 +36,7 @@ namespace TestX.application.Mapping
                 //.ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province));
             CreateMap<UpdateAccountDto, ApplicationUser>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
-                .ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.Password))
+                //.ForMember(dest => dest.PasswordHash, opt => opt.MapFrom(src => src.Password))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
                 //.ForMember(dest => dest.Province, opt => opt.MapFrom(src => src.Province))
                 .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))

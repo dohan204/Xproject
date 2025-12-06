@@ -167,9 +167,11 @@ namespace TestX.infrastructure.Services
                 acc.FullName = user.FullName;
                 acc.Email = user.Email;
                 acc.PhoneNumber = user.PhoneNumber;
-            if (!string.IsNullOrWhiteSpace(user.Password))
-                acc.PasswordHash = _passwordHasher.HashPassword(acc, user.Password);
-
+            //if (!string.IsNullOrWhiteSpace(user.Password))
+            //    acc.PasswordHash = _passwordHasher.HashPassword(acc, user.Password);
+            acc.Gender = user.Gender;
+            acc.ProvinceId = user.ProvinceId;
+            acc.WardsCommuneId = user.WardId;
                 acc.DateOfBirth = user.DateOfBirth;
                 acc.UpdatedAt = DateTime.Now;
             

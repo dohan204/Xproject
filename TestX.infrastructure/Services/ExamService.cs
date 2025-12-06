@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using TestX.application.Dtos.ExamTestDto;
 using TestX.application.Mapping.Exam;
 using TestX.application.Repositories;
+using TestX.domain.Entities.AccountRole;
 using TestX.domain.Entities.General;
 using TestX.infrastructure.Identity;
 
@@ -120,6 +121,8 @@ namespace TestX.infrastructure.Services
             //        .ThenInclude(e => e.Question)
             //    .Include(e => e.Subject)
             //            .FirstOrDefaultAsync(e => e.Id == id);
+            int numberOfExam = 1;
+            int crementExam = numberOfExam++;
             var examDetails = from e in _identityContext.Exams
                               join ed in _identityContext.ExamDetails on e.Id equals ed.ExamId
                               join q in _identityContext.Questions on ed.QuestionId equals q.Id
@@ -197,59 +200,28 @@ namespace TestX.infrastructure.Services
             // remove cached exam details if present
             //var cacheKey = $"Question_Exam_{id}";
             //await _cacheService.RemoveAsync(cacheKey);
+            // timf va xoa di bang con cua no truoc
+            var studentExam = await _identityContext.StudentExams.Where(e => e.ExamId == id).ToListAsync();
+            if(studentExam == null)
+                throw new Exception("Không thể xóa bài thi vì đã có sinh viên tham gia");
+             _identityContext.StudentExams.RemoveRange(studentExam);
+            await _identityContext.SaveChangesAsync();
 
-            // find exam
+            // tim va xoa di choice exam
+            var choiceExam = await _identityContext.Choices.Where(e => e.ExamId == id).ToListAsync();
+            if (choiceExam == null)
+                return 0;
+            _identityContext.Choices.RemoveRange(choiceExam);
+            await _identityContext.SaveChangesAsync();
+
+            // find exam: cuooix cung
             var exam = await _identityContext.Exams.FirstOrDefaultAsync(e => e.Id == id);
             if (exam == null) return 0;
-
+            _identityContext.Exams.Remove(exam);
+            await _identityContext.SaveChangesAsync();
+            return exam.Id;
             // use transaction to ensure consistency across related deletes
-            await using var transaction = await _identityContext.Database.BeginTransactionAsync();
-            try
-            {
-                // remove exam details
-                var examDetails = await _identityContext.ExamDetails
-                    .Where(ed => ed.ExamId == id)
-                    .ToListAsync();
-                Console.WriteLine(examDetails);
-                if (examDetails.Any())
-                    _identityContext.ExamDetails.RemoveRange(examDetails);
 
-                // remove choice exams (if any)
-                var choiceExams = await _identityContext.Set<ChoiceExam>()
-                    .Where(c => c.ExamId == id)
-                    .ToListAsync();
-                Console.WriteLine(choiceExams);
-                if (choiceExams.Any())
-                    _identityContext.Set<ChoiceExam>().RemoveRange(choiceExams);
-
-                // remove student exams and their details (if any)
-                var studentExams = await _identityContext.Set<StudentExam>()
-                    .Where(se => se.ExamId == id)
-                    .ToListAsync();
-                if (studentExams.Any())
-                {
-                    var studentExamIds = studentExams.Select(se => se.Id).ToList();
-                    var studentExamDetails = await _identityContext.Set<StudentExamDetails>()
-                        .Where(d => studentExamIds.Contains(d.Id))
-                        .ToListAsync();
-                    if (studentExamDetails.Any())
-                        _identityContext.Set<StudentExamDetails>().RemoveRange(studentExamDetails);
-
-                    _identityContext.Set<StudentExam>().RemoveRange(studentExams);
-                }
-
-                // finally remove the exam itself
-                _identityContext.Exams.Remove(exam);
-
-                await _identityContext.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return id;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
         }
         public async Task<List<ExamViewDto>> GetExamBySubjectName(int id)
         {
@@ -276,94 +248,257 @@ namespace TestX.infrastructure.Services
                 .ToListAsync();
             return exam;
         }
-        public async Task<double> HandleDataSubmit(Dictionary<int, string> resultFromFE, int examId)
+        public async Task<ResultTestDto> HandleDataSubmit(Dictionary<int, string> resultFromFE, int examId)
         {
-            // laays ra id người dùng hiện tại từ token
             var userId = HttpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            // kiểm tra nếu userId null thì ném ngoại lệ
+            var name = HttpContextAccessor.HttpContext?.User?.FindFirst("fullName")?.Value;
             if (string.IsNullOrEmpty(userId))
-            {
                 throw new UnauthorizedAccessException("User is not authenticated.");
-            }
-            // biến đếm số câu trả lời đúng
+
             int correctAnswers = 0;
-            // lấy ra đề thi cần để chấm điểm từ 
+            var studentAnswers = new List<string>();
+            int wrong = 0;
+            int questionSkip = 0;
+            var listAnswerWrong = new List<string>();
             var exam = await GetDetailsWithQuestion(examId);
-            var dataFromFe = resultFromFE;
-            if (exam == null || dataFromFe == null)
-                return 0;
-            var history = new History
-            {
-                Name = $"Exam_{examId}_User_{userId}",
-                Time = DateTime.Now
-            };
-
-            await _identityContext.Set<History>().AddAsync(history);
+            if (exam == null || resultFromFE == null)
+                throw new Exception("Exam not found or invalid submission data.");
+            var examFrom = await _identityContext.Exams.FirstOrDefaultAsync(e => e.Id == examId);
+            if (examFrom == null)
+                throw new Exception("Khong tim thay nguoi dung");
+            examFrom.NumberOfExam += examFrom.NumberOfExam.GetValueOrDefault() + 1;
+            _identityContext.Exams.Update(examFrom);
+            Console.WriteLine(_identityContext.Entry(examFrom).State);
             await _identityContext.SaveChangesAsync();
-            // lập lặp qua danh sách câu hỏi trong đề thi và so sánh các đáp án 
-            var correactAnswerList = new List<string>();
-            foreach (var question in exam.Question)
+            // bắt transaction để rollback nếu có lỗi
+            using var transaction = await _identityContext.Database.BeginTransactionAsync();
+            try
             {
-                // lấy ra câu hỏi dựa trên id, sau đó gán vào biến selectedAnswer
-                if (dataFromFe.TryGetValue(question.Id, out var selectedAnswer))
+                // 1) History
+                var history = new History
                 {
-                    // so sánh đáp án được chọn với đáp án đúng trong đề 
-                    if (string.Equals(selectedAnswer, question.Answer, StringComparison.OrdinalIgnoreCase))
-                    {
-                        correctAnswers++;
-                        correactAnswerList.Add(selectedAnswer);
-                    }
-                    // lưu lại lựa chọn vào bảng ChoiceExam
-                    var choiceExam = new ChoiceExam
-                    {
-                        AccountId = userId, // cần lấy id người dùng hiện tại
-                        ExamId = examId,
-                        HistoryId = history.Id, // cần
-                        ContentExam = question.Content,
-                        Description = $"Selected Answer: {selectedAnswer}"
-                    };
-                    await _identityContext.Set<ChoiceExam>().AddAsync(choiceExam);
-                    var studentExamDetails = new StudentExamDetails
-                    {
-                        StudentExamId = userId, // tạm thời sử dụng hashcode của userId làm Id
-                        QuestionId = question.Id,
-                        StudentAnswer = selectedAnswer,
-                        HistoryId = history.Id,
-                        IsCorrect = string.Equals(selectedAnswer, question.Answer, StringComparison.OrdinalIgnoreCase) ? 1 : 0,
-                        CreateAt = DateTime.Now
-                    };
-                }
-            }
-            await _identityContext.SaveChangesAsync();
-            int maxScore = 10;
-            // tính điểm dựa trên số câu đúng và tổng số câu hỏi
-            double score = (double)correctAnswers / exam.NumberOfQuestions * maxScore;
+                    Name = $"Exam_{examId}_User_{userId}",
+                    Time = DateTime.Now
+                };
+                await _identityContext.Histories.AddAsync(history);
+                await _identityContext.SaveChangesAsync(); // history.Id có giá trị
 
-            // sau khi đã chám điểm xong thì trả về số câu đúng 
-            // lưu kết quả bài thi vào bảng StudentExam
-            bool isPadded;
-            if(score > 6)
-            {
-                isPadded = true;
-                Console.WriteLine("Bạn đã vượt qua bài thi.");
-            } else  {
-                isPadded = false;
-                Console.WriteLine("Bạn đã trượt bài thi.");
-            }
-            var studentExam = new StudentExam
+                // 2) StudentExam (cha)
+                var studentExam = new StudentExam
                 {
                     AccountId = userId,
                     ExamId = examId,
-                    Score = (int)score,
-                    IsPassed = isPadded,
-                    CorrectNumber = correctAnswers,
-                    TotalQuestion = exam.NumberOfQuestions,
                     StartDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
+                    CreateBy = name ?? "System"
+                };
+                await _identityContext.StudentExams.AddAsync(studentExam);
+                await _identityContext.SaveChangesAsync(); // studentExam.Id có giá trị
+                
+                // 3) ChoiceExam (nếu nghiệp vụ cần 1 bản cho cả bài)
+                // kiểm tra tồn tại để tránh duplicate key nếu chạy lại
+                var existingChoice = await _identityContext.Choices
+                    .FirstOrDefaultAsync(c => c.AccountId == userId && c.ExamId == examId && c.HistoryId == history.Id);
+
+                if (existingChoice == null)
+                {
+                    var choiceExam = new ChoiceExam
+                    {
+                        AccountId = userId,
+                        ExamId = examId,
+                        HistoryId = history.Id,
+                        ContentExam = "Exam summary or whatever",
+                        Description = "Exam taken"  
+                    };
+                    await _identityContext.Choices.AddAsync(choiceExam);
+                    await _identityContext.SaveChangesAsync();
+                }
+                // 4) StudentExamDetails cho từng câu hỏi
+                foreach (var question in exam.Question)
+                {
+                    if (resultFromFE.TryGetValue(question.Id, out var selectedAnswer))
+                    {
+                        if(selectedAnswer == null)
+                        {
+                            questionSkip++;
+                        }
+                        // chỉ tăng khi đúng
+                        if (string.Equals(selectedAnswer, question.Answer, StringComparison.OrdinalIgnoreCase))
+                        {
+                            correctAnswers++;
+                        } else
+                        {
+                            listAnswerWrong.Add($"Câu hỏi ID {question.Id} - Đáp án của bạn: {selectedAnswer} - Đáp án đúng: {question.Answer}");
+                            wrong++;
+                        }
+                            studentAnswers.Add(selectedAnswer ?? string.Empty);
+                        var detail = new StudentExamDetails
+                        {
+                            StudentExamId = studentExam.Id,       // <-- phải là id của StudentExam đã tạo
+                            QuestionId = question.Id,
+                            StudentAnswer = selectedAnswer,
+                            HistoryId = history.Id,
+                            IsCorrect = string.Equals(selectedAnswer, question.Answer, StringComparison.OrdinalIgnoreCase) ? 1 : 0,
+                            CreateAt = DateTime.Now
+                        };
+
+                        await _identityContext.StudentExamDetails.AddAsync(detail);
+                    }
+                }
+
+                await _identityContext.SaveChangesAsync();
+
+                // 5) Tính điểm và lưu vào StudentExam (update)
+                int maxScore = 10;
+                double score = exam.NumberOfQuestions > 0
+                    ? (double)correctAnswers / exam.NumberOfQuestions * maxScore
+                    : 0.0;
+
+                var roundedScore = (int)Math.Round(score); // hoặc Math.Ceiling / Floor tuỳ m muốn
+
+                // cập nhật studentExam
+                studentExam.Score = roundedScore;
+                studentExam.CorrectNumber = correctAnswers;
+                studentExam.TotalQuestion = exam.NumberOfQuestions;
+                studentExam.WrongAnswer = wrong;
+                studentExam.IsPassed = score > 6; // tuỳ threshold
+                                                  // nếu muốn lưu thời gian hoàn thành có thể thêm FinishDate
+
+                _identityContext.StudentExams.Update(studentExam);
+                await _identityContext.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+                var resultTestDto = new ResultTestDto
+                {
+                    TotalQuestions = exam.NumberOfQuestions,
+                    CorrectAnswers = correctAnswers,
+                    Score = roundedScore,
+                    //AnswersGiven = studentAnswers,
+                    WrongAnswers = wrong,
+                    QuestionSkip = questionSkip,
+                };
+                return resultTestDto;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        public async Task<int> AddExamFavorites(AddFavoriteExamDto favorite)
+        {
+            // đầu tiên lấy ra thông tin người dùng 
+            var user = await _identityContext.Users.FirstOrDefaultAsync(u => u.Id == favorite.AccountId);
+            if (user == null)
+            {
+                throw new Exception("không tìm thấy người dùng");
+            }
+            // lấy ra bài thi mà người dùng chọn 
+            var examId = await _identityContext.Exams.FirstOrDefaultAsync(e => e.Id == favorite.ExamId);
+            if(examId == null)
+            {
+                throw new Exception("Không tìm thấy bài thi");
+            }
+            // tạo đề thi yêu thích bằng các lấy thông tin từ 2 lần truy vấn trước 
+            var existingFavorite = await _identityContext.ExamFavorites
+                .FirstOrDefaultAsync(ef => ef.ExamId == favorite.ExamId);
+            if(existingFavorite != null)
+            {
+                throw new Exception("Bài thi đã được thêm vào danh sách yêu thích");
+            } else
+            {
+                var examFavorite = new ExamFavorite
+                {
+                    AccountId = user.Id,
+                    ExamId = examId.Id,
                     CreatedAt = DateTime.Now
                 };
-            await _identityContext.Set<StudentExam>().AddAsync(studentExam);
+                _identityContext.ExamFavorites.Add(examFavorite);
+            }
+
             await _identityContext.SaveChangesAsync();
-            return score;
+            return 1;
+        }
+        public async Task<int> RemoveFavorites(int Id)
+        {
+            var favorites = await _identityContext.ExamFavorites.FirstOrDefaultAsync(e => e.Id == Id);
+            if (favorites == null)
+                return 0;
+            // Lấy Ra người dùng với id favorite
+            var userAccount = await _identityContext.Users.FirstOrDefaultAsync(i => i.Id == favorites.AccountId);
+            var examId = await _identityContext.Exams.FirstOrDefaultAsync(e => e.Id == favorites.ExamId);
+            if(userAccount != null && examId != null)
+            {
+                // 
+                _identityContext.ExamFavorites.Remove(favorites);
+            }
+            // thực hiện xóa bài thi yêu thích của người dùng
+            await _identityContext.SaveChangesAsync();
+            return 1;
+        }
+        public async Task<List<FavoriteExamViewDto>> GetFavoriteExamsByAccountId(string accountId)
+        {
+            //var favoriteExams = from ef in _identityContext.ExamFavorites
+            //                    join e in _identityContext.Exams on ef.ExamId equals e.Id
+            //                    join s in _identityContext.Subjects on e.SubjectId equals s.Id
+            //                    where ef.AccountId == accountId
+            //                    select new FavoriteExamViewDto
+            //                    {
+            //                        Id = ef.Id,
+            //                        ExamName = e.Title,
+            //                        SubjectName = s.Name,
+            //                        TestingTime = e.TestingTime,
+            //                        NumberOfQuestion = e.NumberOfQuestion,
+            //                        CreatedAt = ef.CreatedAt
+            //                    };
+            //return await favoriteExams.ToListAsync();\\
+            var favoriteExam = await _identityContext.ExamFavorites.Where(a => a.AccountId == accountId)
+                .Include(e => e.Exam).ThenInclude(s => s.Subject)
+                .ToListAsync();
+            if(favoriteExam.Count == 0)
+            {
+                throw new Exception("Không tìm thấy bài thi yêu thích nào");
+            }
+            var favoriteExamDto = _mapper.Map<List<FavoriteExamViewDto>>(favoriteExam);
+            return favoriteExamDto;
+        }
+        public async Task<List<ExamStudentView>> GetExamOfUser(string accountId)
+        {
+            var examCount = await _identityContext.StudentExams
+                .Where(se => se.AccountId == accountId).Include(e => e.Exam).ThenInclude(s => s.Subject)
+                .ToListAsync();
+           var listExamDto = _mapper.Map<List<ExamStudentView>>(examCount);
+            return listExamDto;
+        }
+        public async Task<ResultTestDto> OnSumbitDataFree(Dictionary<int, string> answers, int examId)
+        {
+            var examIdDb = await GetDetailsWithQuestion(examId);
+            if(examIdDb == null)
+            {
+                throw new Exception("Khong tim thay bai thi");
+            }
+            int correctAnswer = 0;
+            int wrongAnswer = 0;
+            foreach(var question in examIdDb.Question)
+            {
+                if(answers.TryGetValue(question.Id, out var selectAnser))
+                {
+                    if(string.Equals(selectAnser, question.Answer)){
+                        correctAnswer++;
+                    } else
+                    {
+                        wrongAnswer++;
+                    }
+                }
+            }
+            var score = (double)correctAnswer / examIdDb.NumberOfQuestions * 10;
+            return new ResultTestDto
+            {
+                CorrectAnswers = correctAnswer,
+                WrongAnswers = wrongAnswer,
+                Score = score,
+                TotalQuestions = examIdDb.NumberOfQuestions
+            };
         }
     }
 }

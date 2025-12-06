@@ -34,9 +34,7 @@ namespace TestX.infrastructure.Services
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email ?? ""),
-                new Claim(ClaimTypes.Email, user.Email ?? ""),
                 new Claim(ClaimTypes.GivenName, user.UserName ?? ""),
-                new Claim(JwtRegisteredClaimNames.Iss, issuer),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId),
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
             };
@@ -64,6 +62,6 @@ namespace TestX.infrastructure.Services
             var tokenhandler = new JwtSecurityTokenHandler();
             var token = tokenhandler.CreateToken(TokenDesc);
             return tokenhandler.WriteToken(token);
-        }
+        } 
     }
 }

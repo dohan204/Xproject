@@ -31,12 +31,18 @@ namespace TestX.infrastructure
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
                 var redisConfig = configuration["RedisCacheOptions:Configuration"];
-                if(string.IsNullOrEmpty(redisConfig))
+                if (string.IsNullOrEmpty(redisConfig))
                 {
                     throw new ArgumentNullException("Redis configuration is missing in appsetting.json");
                 }
                 return ConnectionMultiplexer.Connect(redisConfig);
             });
+
+            //services.AddDbContext<TempIdentityContext>(options =>
+            //   options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            //services.AddIdentity<ApplicationUser, ApplicationRole>()
+            //    .AddEntityFrameworkStores<TempIdentityContext>()
+            //    .AddDefaultTokenProviders();
         }
     }
 }

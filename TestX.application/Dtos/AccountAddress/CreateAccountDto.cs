@@ -30,5 +30,6 @@ namespace TestX.application.Dtos.AccountAddress
         public int ProvinceId { get; set; }
         [Range(1, int.MaxValue, ErrorMessage = "Invalid DistrictId")]
         public int wardsCommuneId { get; set; }
+        public string? Gender { get; set; }
     }
 }

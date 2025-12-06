@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using TestX.application.Dtos;
 using TestX.application.Dtos.ExamTestDto;
 using TestX.application.Mapping.Exam;
+using TestX.domain.Entities.AccountRole;
 using TestX.domain.Entities.General;
 
 namespace TestX.application.Repositories
@@ -25,6 +26,11 @@ namespace TestX.application.Repositories
         Task<int> Delete(int id);
         Task<List<ExamViewDto>> GetExamBySubjectName(int id);
         Task<List<ExamViewDto>> GetBySubject(string name);
-        Task<double> HandleDataSubmit(Dictionary<int, string> resultFromFE, int examId);
+        Task<ResultTestDto> HandleDataSubmit(Dictionary<int, string> resultFromFE, int examId);
+        Task<int> AddExamFavorites(AddFavoriteExamDto favorite);
+        Task<int> RemoveFavorites(int Id);
+        Task<List<FavoriteExamViewDto>> GetFavoriteExamsByAccountId(string accountId);
+        Task<List<ExamStudentView>> GetExamOfUser(string accountId);
+        Task<ResultTestDto> OnSumbitDataFree(Dictionary<int, string> answers, int examId);
     }
 }

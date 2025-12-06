@@ -80,6 +80,7 @@ namespace TestX.api.Controllers
             var result = await _accountService.UpdateAsync(id, accountDto);
             if (result == 0)
                 throw new NotFoundException("account", id);
+            _logger.LogInformation("Cập nhật thành công.");
             return Content("Cập nhật tài khoản thành công.");
         }
         [HttpDelete("deleteAccount")]

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TestX.domain.Entities.AccountRole;
 using TestX.domain.Entities.General;
+using Microsoft.EntityFrameworkCore;
 
 namespace TestX.application.InterfacesContext
 {

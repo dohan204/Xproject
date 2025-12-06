@@ -14,7 +14,6 @@ namespace TestX.api.Middleware
             _next = next;
             _logger = logger;
         }
-
         public async Task InvokeAsync(HttpContext context)
         {
             try
